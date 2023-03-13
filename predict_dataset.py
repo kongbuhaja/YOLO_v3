@@ -42,7 +42,7 @@ def main():
             pred = draw_utils.draw_labels(image.copy(), NMS_bboxes, NMS_scores, NMS_classes)
             origin = draw_utils.draw_labels(image.copy(), bbox_utils.xywh_to_xyxy(labels[..., :4]), tf.ones_like(labels[..., 4]), labels[..., 4])
             output = np.concatenate([origin, pred], 1)
-            draw_utils.inference_image(output.astype(np.uint8))
+            draw_utils.save_image(output.astype(np.uint8))
     
     
     

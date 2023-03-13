@@ -1,5 +1,4 @@
 import tensorflow as tf
-import tensorflow_datasets as tfds
 import numpy as np
 import os, shutil, sys, cv2
 import xml.etree.ElementTree as ET
@@ -20,8 +19,7 @@ class Dataset():
         self.new_anchors = False
 
     def load(self):
-        assert self.split in ['train', 'valid', 'test'], "Check your dataset type and split."
-        self._download_dataset()
+        assert self.split in ['train', 'valid'], "Check your dataset type and split."
         self.read_files()
 
     def generator(self):
@@ -37,8 +35,6 @@ class Dataset():
         directories = self.get_load_directory(self.split)
         print('Reading local_files...  ', end='', flush=True)
         for directory in directories:
-            directory += '/VOCdevkit/'
-            directory += os.listdir(directory)[0]
             image_dir = directory + '/JPEGImages/'
             anno_dir = directory + '/Annotations/'
 
@@ -55,30 +51,16 @@ class Dataset():
                 self.data.append([image_file, labels, width, height])
         np.random.shuffle(self.data)
         print('Done!')
-        
-    def _download_dataset(self):
-        if not os.path.exists("./data/" + self.dtype):
-            os.mkdir("./data/" + self.dtype)
-            tfds.load(self.dtype + '/2012', data_dir='./data/' + self.dtype)
-            tfds.load(self.dtype + '/2007', data_dir='./data/' + self.dtype)
-            if os.path.exists('./data/' + self.dtype + '/' + self.dtype):
-                shutil.rmtree('./data/' + self.dtype + '/' + self.dtype)
-            for file in os.listdir('./data/' + self.dtype + '/downloads/'):
-                if file.endswith(".tar") or file.endswith(".INFO"):
-                    os.remove('./data/' + self.dtype + '/downloads/' + file)
 
     def get_load_directory(self, split):
         load_directory=[]
-        extracted_dir = './data/' + self.dtype + '/downloads/extracted/'
+        extracted_dir = "./data/" + self.dtype + "/"
         for dir in os.listdir(extracted_dir):
             if split=="train":
                 if "tra" in dir:
                     load_directory.append(extracted_dir + dir)
             elif split=="valid":
-                if "2007" in dir and "test" in dir:
-                    load_directory.append(extracted_dir + dir)
-            elif split=="test":
-                if "2012" in dir and "test" in dir:
+                if "val" in dir:
                     load_directory.append(extracted_dir + dir)
         return load_directory
 

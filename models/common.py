@@ -58,5 +58,5 @@ class DarknetUpsample(Layer):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-    def call(self, input):
+    def call(self, input, training=False):
         return tf.image.resize(input, (input.shape[1]*2, input.shape[2]*2), method='nearest')

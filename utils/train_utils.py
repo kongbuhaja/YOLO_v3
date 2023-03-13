@@ -5,18 +5,14 @@ from utils import io_utils
 def lr_scheduler(epoch, warmup_iter):
     if warmup_iter < WARMUP:
         return LR / WARMUP * (warmup_iter+1)
-    if epoch < 50:
-        return LR
     elif epoch < 100:
         return LR
-    elif epoch < 150:
-        return LR
     elif epoch < 200:
-        return LR
-    elif epoch < 400:
-        return LR
-    else:
+        return LR*0.5
+    elif epoch < 300:
         return LR*0.1
+    else:
+        return LR*0.05
             
 def load_model(model):
     model.load_weights(CHECKPOINTS)

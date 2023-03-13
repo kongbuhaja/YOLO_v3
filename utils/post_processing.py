@@ -62,3 +62,39 @@ def NMS(bboxes, scores, classes, score_threshold=0.6):
             sample_argsort = tf.gather(sample_argsort, iou_argsort)[remove_count:]
 
     return NMS_bboxes, NMS_scores, NMS_classes
+
+
+# 첨부터 다시짜보자
+def soft_NMS(bboxes, scores, classes, score_threshold=0.6):
+    NMS_bboxes = tf.zeros((0,4))
+    NMS_scores = tf.zeros((0))
+    NMS_classes = tf.zeros((0), tf.int32)
+
+    score_mask = tf.cast(scores > score_threshold, tf.int32)
+    positive_count = tf.reduce_sum(score_mask)
+    score_argsort = tf.argsort(scores, direction='DESCENDING')
+
+    bboxes = bbox_utils.xywh_to_xyxy(tf.gather(bboxes, score_argsort)[:positive_count])
+    bboxes = tf.minimum(tf.maximum(0, bboxes), IMAGE_SIZE)
+    scores = tf.gather(scores, score_argsort)[:positive_count]
+    classes = tf.gather(classes, score_argsort)[:positive_count]
+    unique_classes, idxs = tf.unique(classes)
+
+    for u_class in unique_classes:
+        class_mask = tf.cast(classes == u_class, tf.int32)
+        class_count = tf.reduce_sum(class_mask)
+        sample_argsort = tf.argsort(class_mask, direction='DESCENDING')[:class_count]
+
+        while(sample_argsort.shape[0]>0):
+            index = sample_argsort[0]
+            NMS_bboxes = tf.concat([NMS_bboxes, bboxes[index][None]], 0)
+            NMS_scores = tf.concat([NMS_scores, scores[index][None]], 0)
+            NMS_classes = tf.concat([NMS_classes, classes[index][None]], 0)
+
+            ious = bbox_utils.bbox_iou(bboxes[index], tf.gather(bboxes, sample_argsort), xywh=False)
+            iou_filter_mask = tf.cast(ious > 0.4, tf.int32)
+            remove_count = tf.reduce_sum(iou_filter_mask)
+            iou_argsort = tf.argsort(ious, direction='DESCENDING')
+            sample_argsort = tf.gather(sample_argsort, iou_argsort)[remove_count:]
+
+    return NMS_bboxes, NMS_scores, NMS_classes

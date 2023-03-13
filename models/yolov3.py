@@ -5,6 +5,7 @@ from models.common import *
 import numpy as np
 from config import *
 from utils import anchor_utils, bbox_utils
+from losses import yolo_loss
 
 class Darknet53(Layer):
     def __init__(self, **kwargs):
@@ -64,7 +65,7 @@ class Darknet53(Layer):
 
 class Model(Model):
     def __init__(self, anchors=ANCHORS, num_classes=NUM_CLASSES, image_size=IMAGE_SIZE, strides=STRIDES,
-                 coord=5, noobj=0.5, iou_threshold=IOU_THRESHOLD, num_anchor=NUM_ANCHORS, eps=EPS, **kwargs):
+                 iou_threshold=IOU_THRESHOLD, num_anchor=NUM_ANCHORS, eps=EPS, **kwargs):
         super().__init__(**kwargs)
         self.num_classes = num_classes
         self.strides = np.array(strides)
@@ -75,7 +76,7 @@ class Model(Model):
         self.iou_threshold = iou_threshold
         self.num_anchor = num_anchor
         self.eps = eps
-        self.inf = 30.
+        self.inf = 1e+30
 
         self.darknet53 = Darknet53()
         
@@ -124,8 +125,13 @@ class Model(Model):
         for i in range(len(self.large_branch_layers)):
             large_branch = self.large_branch_layers[i](large_branch, training)
         
-        lbbox = Reshape((self.scales[2], self.scales[2], 3, 5+self.num_classes))(large_branch)
+        lbbox = Reshape((self.scales[2], self.scales[2], self.num_anchor, 5+self.num_classes))(large_branch)
 
+        # mbbox
+        for i in range(len(self.large_upsample_layers)):
+            l_route = self.large_upsample_layers[i](l_route, training)
+        
+        m_route = tf.concat([l_route, m_route], -1)
         for i in range(len(self.medium_layers)):
             m_route = self.medium_layers[i](m_route, training)
         
@@ -133,8 +139,13 @@ class Model(Model):
         for i in range(len(self.medium_branch_layers)):
             medium_branch = self.medium_branch_layers[i](medium_branch, training)
         
-        mbbox = Reshape((self.scales[1], self.scales[1], 3, 5+self.num_classes))(medium_branch)
+        mbbox = Reshape((self.scales[1], self.scales[1], self.num_anchor, 5+self.num_classes))(medium_branch)
         
+        # sbbox
+        for i in range(len(self.medium_upsample_layers)):
+            m_route = self.medium_upsample_layers[i](m_route, training)
+        
+        s_route = tf.concat([m_route, s_route], -1)
         for i in range(len(self.small_layers)):
             s_route = self.small_layers[i](s_route, training)
         
@@ -142,7 +153,7 @@ class Model(Model):
         for i in range(len(self.small_branch_layers)):
             small_branch = self.small_branch_layers[i](small_branch, training)
         
-        sbbox = Reshape((self.scales[0], self.scales[0], 3, 5+self.num_classes))(small_branch)
+        sbbox = Reshape((self.scales[0], self.scales[0], self.num_anchor, 5+self.num_classes))(small_branch)
 
         return sbbox, mbbox, lbbox
 
@@ -151,6 +162,9 @@ class Model(Model):
         return -(label*tf.math.log(pred) + (1.-label)*tf.math.log(1.-pred))
 
     def loss(self, labels, preds):
+        return yolo_loss.loss3(labels, preds, self.anchors, self.strides, self.iou_threshold, self.inf, self.eps)
+        
+    def loss1(self, labels, preds):
         loc_loss, conf_loss, prob_loss = 0., 0., 0.
         batch_size = labels[0].shape[0]
 

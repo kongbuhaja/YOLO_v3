@@ -11,7 +11,7 @@ def draw_labels(image, bboxes, scores, classes):
         cv2.putText(image, f'{LABELS[cls]}:{score:.3f}', (bbox[0], bbox[1]-5), cv2.FONT_HERSHEY_COMPLEX_SMALL, 0.7, color, 1)
     return image
 
-def inference_image(image):
+def save_image(image):
     if image.shape[1] != IMAGE_SIZE:
         title = 'truth_and_pred'
     else:

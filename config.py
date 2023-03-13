@@ -1,5 +1,5 @@
 # train config
-EPOCHS = 500
+EPOCHS = 600
 BATCH_SIZE = 16
 LR = 1e-1
 WARMUP = 10000
@@ -26,7 +26,6 @@ LOGDIR = MODEL_TYPE + '_' + DTYPE + '_log'
 # inference config
 OUTPUT_DIR = 'outputs/'
 
-
 # cam config
 CAM_FPS = 30
 CAM_WIDTH = 1920
@@ -41,7 +40,24 @@ if DTYPE =='voc':
     if MODEL_TYPE == 'YOLOv3':
         STRIDES = [8, 16, 32]
         NUM_ANCHORS = 3
-        ANCHORS = [[[23, 32], [54, 68], [68, 147]], [[137, 97], [116, 223], [308, 129]], [[200, 206], [231, 331], [357, 259]]]
-
+        ANCHORS = [[[25, 30], [49, 74], [120, 85]], [[73, 157], [131, 217], [247, 124]], [[209, 278], [333, 199], [341, 312]]]
+    elif MODEL_TYPE == 'YOLOv3_tiny':
+        STRIDES = [16, 32]
+        NUM_ANCHORS = 2
+        YOLO_ANCHORS = [[[10, 14], [23, 27], [37, 58]], [[81, 82], [135, 169], [344, 319]]]
+           
 elif DTYPE == 'coco':
     pass
+
+elif DTYPE == 'custom':
+    LABELS = ['Nam Joo-hyuk', 'Kim Da-mi', 'Kim Seong-cheol', 'Yoo Jae-suk', 
+              'Kim Tae-ri', 'Choi Woo-shik']
+    NUM_CLASSES = 6
+    if MODEL_TYPE == 'YOLOv3':
+        STRIDES = [8, 16, 32]
+        NUM_ANCHORS = 3
+        ANCHORS = [[[24, 27], [35, 41], [45, 53]], [[56, 64], [67, 77], [79, 93]], [[97, 112], [121, 146], [177, 200]]]
+    elif MODEL_TYPE == 'YOLOv3_tiny':
+        STRIDES = [16, 32]
+        NUM_ANCHORS = 2
+        YOLO_ANCHORS = [[[11, 14], [23, 27], [37, 58]], [[81, 82], [135, 169], [344, 319]]]

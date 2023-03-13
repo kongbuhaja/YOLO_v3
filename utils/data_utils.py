@@ -20,6 +20,8 @@ class DataLoader():
     def __call__(self, split, use_tfrecord=True, use_label=False):
         if self.dtype == 'voc':
             from datasets.voc_dataset import Dataset
+        elif self.dtype == 'custom':
+            from datasets.custom_dataset import Dataset
         dataset = Dataset(split)
 
         if use_tfrecord:
@@ -50,7 +52,7 @@ class DataLoader():
         return data
     
     def length(self, split):
-        infopath = f'./{DTYPE}/{split}.txt'
+        infopath = f'./data/{self.dtype}/{split}.txt'
         with open(infopath, 'r') as f:
             lines = f.readlines()
         return int(lines[0])
