@@ -1,0 +1,26 @@
+<annotation>
+	<folder>train</folder>
+	<filename>36.jpg</filename>
+	<path>F:\22.03.20\work\workspace\training_demo\images\train\36.jpg</path>
+	<source>
+		<database>Unknown</database>
+	</source>
+	<size>
+		<width>560</width>
+		<height>373</height>
+		<depth>3</depth>
+	</size>
+	<segmented>0</segmented>
+	<object>
+		<name>Kim Tae-ri</name>
+		<pose>Unspecified</pose>
+		<truncated>0</truncated>
+		<difficult>0</difficult>
+		<bndbox>
+			<xmin>170</xmin>
+			<ymin>73</ymin>
+			<xmax>272</xmax>
+			<ymax>182</ymax>
+		</bndbox>
+	</object>
+</annotation>

@@ -1,0 +1,26 @@
+<annotation>
+	<folder>train</folder>
+	<filename>46.jpg</filename>
+	<path>F:\22.03.20\work\workspace\training_demo\images\train\46.jpg</path>
+	<source>
+		<database>Unknown</database>
+	</source>
+	<size>
+		<width>670</width>
+		<height>1005</height>
+		<depth>3</depth>
+	</size>
+	<segmented>0</segmented>
+	<object>
+		<name>Kim Da-mi</name>
+		<pose>Unspecified</pose>
+		<truncated>0</truncated>
+		<difficult>0</difficult>
+		<bndbox>
+			<xmin>280</xmin>
+			<ymin>180</ymin>
+			<xmax>371</xmax>
+			<ymax>277</ymax>
+		</bndbox>
+	</object>
+</annotation>

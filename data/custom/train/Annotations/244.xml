@@ -1,0 +1,26 @@
+<annotation verified="yes">
+	<folder>train</folder>
+	<filename>244.jpg</filename>
+	<path>F:\22.03.20\work\workspace\training_demo\images\train\244.jpg</path>
+	<source>
+		<database>Unknown</database>
+	</source>
+	<size>
+		<width>600</width>
+		<height>817</height>
+		<depth>3</depth>
+	</size>
+	<segmented>0</segmented>
+	<object>
+		<name>Yoo Jae-suk</name>
+		<pose>Unspecified</pose>
+		<truncated>0</truncated>
+		<difficult>0</difficult>
+		<bndbox>
+			<xmin>210</xmin>
+			<ymin>127</ymin>
+			<xmax>349</xmax>
+			<ymax>271</ymax>
+		</bndbox>
+	</object>
+</annotation>

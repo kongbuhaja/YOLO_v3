@@ -1,0 +1,26 @@
+<annotation>
+	<folder>train</folder>
+	<filename>9.jpg</filename>
+	<path>F:\22.03.20\work\workspace\training_demo\images\train\9.jpg</path>
+	<source>
+		<database>Unknown</database>
+	</source>
+	<size>
+		<width>650</width>
+		<height>480</height>
+		<depth>3</depth>
+	</size>
+	<segmented>0</segmented>
+	<object>
+		<name>Choi Woo-shik</name>
+		<pose>Unspecified</pose>
+		<truncated>0</truncated>
+		<difficult>0</difficult>
+		<bndbox>
+			<xmin>362</xmin>
+			<ymin>85</ymin>
+			<xmax>511</xmax>
+			<ymax>252</ymax>
+		</bndbox>
+	</object>
+</annotation>

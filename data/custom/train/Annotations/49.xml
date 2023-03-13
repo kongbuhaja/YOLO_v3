@@ -1,0 +1,26 @@
+<annotation>
+	<folder>train</folder>
+	<filename>49.jpg</filename>
+	<path>F:\22.03.20\work\workspace\training_demo\images\train\49.jpg</path>
+	<source>
+		<database>Unknown</database>
+	</source>
+	<size>
+		<width>600</width>
+		<height>400</height>
+		<depth>3</depth>
+	</size>
+	<segmented>0</segmented>
+	<object>
+		<name>Kim Seong-cheol</name>
+		<pose>Unspecified</pose>
+		<truncated>0</truncated>
+		<difficult>0</difficult>
+		<bndbox>
+			<xmin>292</xmin>
+			<ymin>101</ymin>
+			<xmax>421</xmax>
+			<ymax>230</ymax>
+		</bndbox>
+	</object>
+</annotation>
