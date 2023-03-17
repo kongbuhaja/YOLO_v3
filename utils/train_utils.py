@@ -3,20 +3,22 @@ from config import *
 from utils import io_utils
 
 def lr_scheduler(epoch, warmup_iter):
-    if warmup_iter < WARMUP:
-        return LR / WARMUP * (warmup_iter+1)
-    elif epoch < 100:
-        return LR
+    if epoch < 100:
+        lr = LR
+    elif epoch < 180:
+        lr = LR
     elif epoch < 200:
-        return LR*0.5
-    elif epoch < 300:
-        return LR*0.1
+        lr = LR*0.5
+    elif epoch < 250:
+        lr = LR*0.01
     else:
-        return LR*0.05
+        lr = LR*0.01
+    if warmup_iter < WARMUP:
+        lr = lr / WARMUP * (warmup_iter+1)
+    return lr
             
 def load_model(model):
     model.load_weights(CHECKPOINTS)
-    out = []
     saved_parameter = io_utils.read_model_info()
     return model, saved_parameter['epoch'], saved_parameter['total_loss']
 

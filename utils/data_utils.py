@@ -31,7 +31,9 @@ class DataLoader():
         else:
             dataset.load()
             data_gen = dataset.generator
-            data = tf.data.Dataset.from_generator(data_gen, (tf.uint8, tf.float32))
+            data = tf.data.Dataset.from_generator(data_gen, 
+                                                  output_types=(tf.uint8, tf.float32, tf.float32, tf.float32),
+                                                  output_shapes=((None, None, 3), (None, 5), (), ()))
 
         data = data.cache()
         

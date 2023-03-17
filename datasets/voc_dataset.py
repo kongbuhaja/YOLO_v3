@@ -25,9 +25,9 @@ class Dataset():
         self.read_files()
 
     def generator(self):
-        for image_file, labels in self.data:
+        for image_file, labels, width, height in self.data:
             image = self.read_image(image_file)
-            yield image, labels
+            yield image, labels, width, height
 
     def read_image(self, image_file):
         image = cv2.imread(image_file)
@@ -116,7 +116,6 @@ class Dataset():
         return labels, width, height
     def make_new_anchors(self):
         if self.new_anchors:
-            print(self.normalized_anno.shape)
             anchors = anchor_utils.generate_anchors(self.normalized_anno, np.prod(self.anchors.shape[:-1]), self.image_size, self.image_size)
             io_utils.edit_config(str(self.anchors.tolist()), str(anchors.reshape(self.anchors.shape).tolist()))
         

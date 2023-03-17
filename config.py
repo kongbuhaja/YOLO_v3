@@ -1,6 +1,6 @@
 # train config
 EPOCHS = 600
-BATCH_SIZE = 16
+BATCH_SIZE = 8
 LR = 1e-1
 WARMUP = 10000
 DTYPE = 'voc'
@@ -27,9 +27,7 @@ LOGDIR = MODEL_TYPE + '_' + DTYPE + '_log'
 OUTPUT_DIR = 'outputs/'
 
 # cam config
-CAM_FPS = 30
-CAM_WIDTH = 1920
-CAM_HEIGHT = 1080
+VIDEO_PATH = 0
 
 if DTYPE =='voc':
     LABELS = ['aeroplane', 'bicycle', 'bird', 'boat', 'bottle',
@@ -40,7 +38,7 @@ if DTYPE =='voc':
     if MODEL_TYPE == 'YOLOv3':
         STRIDES = [8, 16, 32]
         NUM_ANCHORS = 3
-        ANCHORS = [[[25, 30], [49, 74], [120, 85]], [[73, 157], [131, 217], [247, 124]], [[209, 278], [333, 199], [341, 312]]]
+        ANCHORS = [[[24, 30], [46, 72], [123, 75]], [[72, 147], [171, 145], [118, 232]], [[324, 151], [212, 277], [347, 288]]]
     elif MODEL_TYPE == 'YOLOv3_tiny':
         STRIDES = [16, 32]
         NUM_ANCHORS = 2
@@ -56,8 +54,12 @@ elif DTYPE == 'custom':
     if MODEL_TYPE == 'YOLOv3':
         STRIDES = [8, 16, 32]
         NUM_ANCHORS = 3
-        ANCHORS = [[[24, 27], [35, 41], [45, 53]], [[56, 64], [67, 77], [79, 93]], [[97, 112], [121, 146], [177, 200]]]
+        ANCHORS = [[[25, 29], [38, 46], [50, 58]], [[63, 73], [78, 91], [96, 111]], [[118, 144], [153, 171], [204, 237]]]
     elif MODEL_TYPE == 'YOLOv3_tiny':
         STRIDES = [16, 32]
         NUM_ANCHORS = 2
         YOLO_ANCHORS = [[[11, 14], [23, 27], [37, 58]], [[81, 82], [135, 169], [344, 319]]]
+        
+        
+# draw
+DRAW = True

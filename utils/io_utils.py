@@ -49,3 +49,8 @@ def edit_config(pre_text, new_text):
             lines[l] = sp_line[0] + str(new_text) + sp_line[1]
     with open('config.py', 'w') as f:
         f.writelines(lines)
+    
+def write_eval(text):
+    path = OUTPUT_DIR + DTYPE + '_evaluation.txt'
+    with open(path, 'w', encoding='utf-8') as f:
+        f.write(text)

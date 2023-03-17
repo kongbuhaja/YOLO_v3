@@ -9,7 +9,7 @@ def prediction_to_bbox(grids, anchors):
     scores = tf.zeros((batch_size, 0))
     classes = tf.zeros((batch_size, 0), tf.int32)
     for grid, anchor, stride in zip(grids, anchors, STRIDES):
-        grid = tf.reshape(grid, [batch_size, -1, 25])
+        grid = tf.reshape(grid, [batch_size, -1, 5+NUM_CLASSES])
 
         xy = tf.sigmoid(grid[..., :2]) + anchor[..., :2]
         wh = tf.exp(grid[..., 2:4]) * anchor[..., 2:4]
@@ -42,6 +42,7 @@ def NMS(bboxes, scores, classes, score_threshold=0.6):
     bboxes = tf.minimum(tf.maximum(0, bboxes), IMAGE_SIZE)
     scores = tf.gather(scores, score_argsort)[:positive_count]
     classes = tf.gather(classes, score_argsort)[:positive_count]
+
     unique_classes, idxs = tf.unique(classes)
 
     for u_class in unique_classes:

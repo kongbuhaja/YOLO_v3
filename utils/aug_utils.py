@@ -16,7 +16,7 @@ def augmentation(image, labels, width, height):
 def tf_augmentation(image, labels, width, height):
     bboxes = labels[..., :4]
     color_methods = [random_brigthness, random_contrast, random_hue, random_saturation]
-    geometric_methods = [random_flip_horizontally, random_flip_vertically, random_crop]
+    geometric_methods = [random_flip_horizontally, random_flip_vertically]
     for augmentation_method in geometric_methods + color_methods:
         image, bboxes, width, height = randomly_apply(augmentation_method, image, bboxes, width, height)
     labels = tf.concat([bboxes, labels[..., 4:5]], -1)
