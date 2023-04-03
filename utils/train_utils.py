@@ -2,21 +2,35 @@ import tensorflow as tf
 from config import *
 from utils import io_utils
 
-def lr_scheduler(epoch, warmup_iter):
-    if epoch < 100:
-        lr = LR
-    elif epoch < 180:
-        lr = LR
-    elif epoch < 200:
-        lr = LR*0.5
-    elif epoch < 250:
-        lr = LR*0.01
-    else:
-        lr = LR*0.01
-    if warmup_iter < WARMUP:
-        lr = lr / WARMUP * (warmup_iter+1)
+def step_lr_scheduler(step, max_step, step_per_epoch, warmup_step):
+    lr = warmup_lr_scheduler(warmup_step)
+    
+    if not lr:
+        epoch = step / step_per_epoch
+        
+        if epoch < 100:
+            lr = LR 
+        elif epoch < 300:
+            lr = LR * 0.1
+        elif epoch < 400:
+            lr = LR * 0.5
+        elif epoch < 500:
+            lr = LR * 0.01
+        else:
+            lr = LR * 0.05
+
+    return lr
+
+def poly_lr_scheduler(step, max_step, step_per_epoch, warmup_step, init_lr=LR, power=0.9):
+    lr = init_lr*(1-(step/(max_step+1)))**power
+    lr = warmup_lr_scheduler(warmup_step, lr) 
     return lr
             
+def warmup_lr_scheduler(warmup_step, lr=LR):
+    if warmup_step < WARMUP:
+        lr = lr / WARMUP * (warmup_step+1)
+    return lr
+
 def load_model(model):
     model.load_weights(CHECKPOINTS)
     saved_parameter = io_utils.read_model_info()

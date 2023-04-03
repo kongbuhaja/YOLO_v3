@@ -1,5 +1,7 @@
 import tensorflow as tf
-from tensorflow.keras.layers import Input, Reshape
+from tensorflow.keras.layers import Reshape
+from tensorflow.keras.initializers import GlorotUniform as glorot
+from tensorflow.keras.initializers import HeUniform as he
 from tensorflow.keras import Model
 from models.common import *
 import numpy as np
@@ -8,29 +10,30 @@ from utils import anchor_utils, bbox_utils
 from losses import yolo_loss
 
 class Darknet53(Layer):
-    def __init__(self, **kwargs):
+    def __init__(self, kernel_initializer=glorot, **kwargs):
         super().__init__(**kwargs)
+        self.kernel_initializer = kernel_initializer
         
-        self.darkentConv1 = DarknetConv(32, 3)
-        self.darknetConv2 = DarknetConv(64, 3, downsample=True)
+        self.darkentConv1 = DarknetConv(32, 3, kernel_initializer=self.kernel_initializer)
+        self.darknetConv2 = DarknetConv(64, 3, downsample=True, kernel_initializer=self.kernel_initializer)
         
-        self.darknetRes1 = [DarknetResidual(64) for _ in range(1)]
+        self.darknetRes1 = [DarknetResidual(64, kernel_initializer=self.kernel_initializer) for _ in range(1)]
         
-        self.darknetConv3 = DarknetConv(128, 3, downsample=True)
+        self.darknetConv3 = DarknetConv(128, 3, downsample=True, kernel_initializer=self.kernel_initializer)
         
-        self.darknetRes2 = [DarknetResidual(128) for _ in range(2)]
+        self.darknetRes2 = [DarknetResidual(128, kernel_initializer=self.kernel_initializer) for _ in range(2)]
         
-        self.darknetConv4 = DarknetConv(256, 3, downsample=True)
+        self.darknetConv4 = DarknetConv(256, 3, downsample=True,kernel_initializer=self.kernel_initializer)
         
-        self.darknetRes3 = [DarknetResidual(256) for _ in range(8)]
+        self.darknetRes3 = [DarknetResidual(256, kernel_initializer=self.kernel_initializer) for _ in range(8)]
         
-        self.darknetConv5 = DarknetConv(512, 3, downsample=True)
+        self.darknetConv5 = DarknetConv(512, 3, downsample=True, kernel_initializer=self.kernel_initializer)
         
-        self.darknetRes4 = [DarknetResidual(512) for _ in range(8)]
+        self.darknetRes4 = [DarknetResidual(512, kernel_initializer=self.kernel_initializer) for _ in range(8)]
         
-        self.darknetConv6 = DarknetConv(1024, 3, downsample=True)
+        self.darknetConv6 = DarknetConv(1024, 3, downsample=True, kernel_initializer=self.kernel_initializer)
         
-        self.darknetRes5 = [DarknetResidual(1024) for _ in range(4)]
+        self.darknetRes5 = [DarknetResidual(1024, kernel_initializer=self.kernel_initializer) for _ in range(4)]
 
     def call(self, input, training=False):
         x = self.darkentConv1(input, training)
@@ -65,7 +68,7 @@ class Darknet53(Layer):
 
 class Model(Model):
     def __init__(self, anchors=ANCHORS, num_classes=NUM_CLASSES, image_size=IMAGE_SIZE, strides=STRIDES,
-                 iou_threshold=IOU_THRESHOLD, num_anchor=NUM_ANCHORS, eps=EPS, **kwargs):
+                 iou_threshold=IOU_THRESHOLD, num_anchor=NUM_ANCHORS, eps=EPS, kernel_initializer=glorot, **kwargs):
         super().__init__(**kwargs)
         self.num_classes = num_classes
         self.strides = np.array(strides)
@@ -75,41 +78,42 @@ class Model(Model):
         self.num_anchor = num_anchor
         self.eps = eps
         self.inf = 1e+30
+        self.kernel_initializer = kernel_initializer
 
         self.darknet53 = Darknet53()
         
-        self.large_layers  = [DarknetConv(512, 1),
-                              DarknetConv(1024, 3),
-                              DarknetConv(512, 1),
-                              DarknetConv(1024, 3),
-                              DarknetConv(512, 1)]
+        self.large_layers  = [DarknetConv(512, 1, kernel_initializer=self.kernel_initializer),
+                              DarknetConv(1024, 3, kernel_initializer=self.kernel_initializer),
+                              DarknetConv(512, 1, kernel_initializer=self.kernel_initializer),
+                              DarknetConv(1024, 3, kernel_initializer=self.kernel_initializer),
+                              DarknetConv(512, 1, kernel_initializer=self.kernel_initializer)]
         
-        self.large_branch_layers = [DarknetConv(1024, 3),
-                             DarknetConv(self.num_anchor*(5+self.num_classes), 1, activate=False, bn=False)]
+        self.large_branch_layers = [DarknetConv(1024, 3, kernel_initializer=self.kernel_initializer),
+                             DarknetConv(self.num_anchor*(5+self.num_classes), 1, activate=False, bn=False, kernel_initializer=self.kernel_initializer)]
         
-        self.large_upsample_layers = [DarknetConv(256, 1),
+        self.large_upsample_layers = [DarknetConv(256, 1, kernel_initializer=self.kernel_initializer),
                                DarknetUpsample()]
         
-        self.medium_layers  = [DarknetConv(256, 1),
-                               DarknetConv(512, 3),
-                               DarknetConv(256, 1),
-                               DarknetConv(512, 3),
-                               DarknetConv(256, 1)]
+        self.medium_layers  = [DarknetConv(256, 1, kernel_initializer=self.kernel_initializer),
+                               DarknetConv(512, 3, kernel_initializer=self.kernel_initializer),
+                               DarknetConv(256, 1, kernel_initializer=self.kernel_initializer),
+                               DarknetConv(512, 3, kernel_initializer=self.kernel_initializer),
+                               DarknetConv(256, 1, kernel_initializer=self.kernel_initializer)]
         
-        self.medium_branch_layers = [DarknetConv(512, 3),
-                                     DarknetConv(self.num_anchor*(5+self.num_classes), 1, activate=False, bn=False)]
+        self.medium_branch_layers = [DarknetConv(512, 3, kernel_initializer=self.kernel_initializer),
+                                     DarknetConv(self.num_anchor*(5+self.num_classes), 1, activate=False, bn=False, kernel_initializer=self.kernel_initializer)]
         
-        self.medium_upsample_layers = [DarknetConv(128, 1),
+        self.medium_upsample_layers = [DarknetConv(128, 1, kernel_initializer=self.kernel_initializer),
                                        DarknetUpsample()]
         
-        self.small_layers = [DarknetConv(128, 1),
-                             DarknetConv(256, 3),
-                             DarknetConv(128, 1),
-                             DarknetConv(256, 3),
-                             DarknetConv(128, 1)]
+        self.small_layers = [DarknetConv(128, 1, kernel_initializer=self.kernel_initializer),
+                             DarknetConv(256, 3, kernel_initializer=self.kernel_initializer),
+                             DarknetConv(128, 1, kernel_initializer=self.kernel_initializer),
+                             DarknetConv(256, 3, kernel_initializer=self.kernel_initializer),
+                             DarknetConv(128, 1, kernel_initializer=self.kernel_initializer)]
         
-        self.small_branch_layers = [DarknetConv(256, 3),
-                                    DarknetConv(self.num_anchor*(5+self.num_classes), 1, activate=False, bn=False)]
+        self.small_branch_layers = [DarknetConv(256, 3, kernel_initializer=self.kernel_initializer),
+                                    DarknetConv(self.num_anchor*(5+self.num_classes), 1, activate=False, bn=False, kernel_initializer=self.kernel_initializer)]
 
         print('Model: YOLOv3')
     

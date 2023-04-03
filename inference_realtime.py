@@ -19,7 +19,7 @@ def main():
         
     filepath = OUTPUT_DIR + 'video/' + 'inference_'
     filepath += str(len(glob.glob(filepath+'*.mp4')))
-    writer = cv2.VideoWriter(filepath + '.mp4', cv2.VideoWriter_fourcc('m', 'p', '4', 'v'), fps, (width, height))
+    writer = cv2.VideoWriter(filepath + 'avi', cv2.VideoWriter_fourcc(*'DIVX'), fps, (width, height))
     
     model, _, _ = train_utils.get_model()
     anchors = list(map(lambda x: tf.reshape(x,[-1,4]), anchor_utils.get_anchors_xywh(ANCHORS, STRIDES, IMAGE_SIZE)))
@@ -38,8 +38,8 @@ def main():
                                                              tf.zeros((1,5)), width, height, IMAGE_SIZE)
             grids = model(tf.cast(resized_frame[None], tf.float32)/255.)
             # shpae 신경쓰기
-            bboxes, scores, classes = post_processing.prediction_to_bbox(grids, anchors)
-            NMS_bboxes, NMS_scores, NMS_classes = post_processing.NMS(bboxes[0], scores[0], classes[0])
+            bboxes, scores, probs = post_processing.prediction_to_bbox(grids, anchors)
+            NMS_bboxes, NMS_scores, NMS_classes = post_processing.NMS(bboxes[0], scores[0], probs[0])
 
             NMS_bboxes = (NMS_bboxes - pad[..., :4])/ratio
             

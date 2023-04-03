@@ -1,13 +1,19 @@
 # train config
-EPOCHS = 600
-BATCH_SIZE = 8
+EPOCHS = 120
+BATCH_SIZE = 16
 LR = 1e-1
-WARMUP = 10000
+WARMUP = 1000
 DTYPE = 'voc'
 IMAGE_SIZE = 416
 MAX_BBOXES = 100
+NMS_TYPE = 'soft_gaussian'
+
 IOU_THRESHOLD = 0.5
-SCORE_THRESHOLD = 0.3
+if NMS_TYPE == 'soft_gaussian':
+    SCORE_THRESHOLD = 1e-3
+else:
+    SCORE_THRESHOLD = 0.3
+SIGMA = 0.5
 COORD = 5
 NOOBJ = 0.5
 EPS = 1e-7
@@ -21,7 +27,7 @@ CHECKPOINTS = VALID_CHECKPOINTS_DIR + MODEL_TYPE
 LOAD_CHECKPOINTS = True
 
 # log config
-LOGDIR = MODEL_TYPE + '_' + DTYPE + '_log'
+LOGDIR = 'logs/' + MODEL_TYPE + '_' + DTYPE + '_log'
 
 # inference config
 OUTPUT_DIR = 'outputs/'
@@ -44,9 +50,6 @@ if DTYPE =='voc':
         NUM_ANCHORS = 2
         YOLO_ANCHORS = [[[10, 14], [23, 27], [37, 58]], [[81, 82], [135, 169], [344, 319]]]
            
-elif DTYPE == 'coco':
-    pass
-
 elif DTYPE == 'custom':
     LABELS = ['Nam Joo-hyuk', 'Kim Da-mi', 'Kim Seong-cheol', 'Yoo Jae-suk', 
               'Kim Tae-ri', 'Choi Woo-shik']
@@ -54,12 +57,11 @@ elif DTYPE == 'custom':
     if MODEL_TYPE == 'YOLOv3':
         STRIDES = [8, 16, 32]
         NUM_ANCHORS = 3
-        ANCHORS = [[[25, 29], [38, 46], [50, 58]], [[63, 73], [78, 91], [96, 111]], [[118, 144], [153, 171], [204, 237]]]
+        ANCHORS = [[[31, 35], [47, 50], [59, 67]], [[70, 77], [83, 90], [96, 106]], [[117, 129], [151, 170], [199, 227]]]
     elif MODEL_TYPE == 'YOLOv3_tiny':
         STRIDES = [16, 32]
         NUM_ANCHORS = 2
         YOLO_ANCHORS = [[[11, 14], [23, 27], [37, 58]], [[81, 82], [135, 169], [344, 319]]]
-        
         
 # draw
 DRAW = True

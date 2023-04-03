@@ -36,8 +36,8 @@ def main():
         batch_images = all_images[i]
         batch_grids = all_grids[i]
         batch_labels = all_labels[i]
-        batch_bboxes, batch_scores, batch_classes = post_processing.prediction_to_bbox(batch_grids, anchors)
-        for image, bboxes, scores, classes, labels in zip(batch_images.astype(np.uint8), batch_bboxes, batch_scores, batch_classes, batch_labels):
+        batch_bboxes, batch_scores, batch_probs = post_processing.prediction_to_bbox(batch_grids, anchors)
+        for image, bboxes, scores, classes, labels in zip(batch_images.astype(np.uint8), batch_bboxes, batch_scores, batch_probs, batch_labels):
             NMS_bboxes, NMS_scores, NMS_classes = post_processing.NMS(bboxes, scores, classes)
             gt_bboxes = bbox_utils.xywh_to_xyxy(labels[..., :4])
             gt_scores = tf.ones_like(labels[..., 4])

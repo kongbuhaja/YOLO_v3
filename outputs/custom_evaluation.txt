@@ -1,7 +1,7 @@
    Nam Joo-hyuk|                                    |0.00
-      Kim Da-mi|                                    |0.00
+      Kim Da-mi|■■                                  |0.06
 Kim Seong-cheol|                                    |0.00
-    Yoo Jae-suk|                                    |0.00
-     Kim Tae-ri|                                    |0.00
-  Choi Woo-shik|                                    |0.00
-mAP50: 0.0000
+    Yoo Jae-suk|■■■■■■■■■■■■■■■■■■■■■■              |0.62
+     Kim Tae-ri|■■■■                                |0.14
+  Choi Woo-shik|■■■                                 |0.09
+mAP50: 0.1515

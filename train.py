@@ -17,7 +17,8 @@ def main():
     train_max_loss = valid_max_loss = max_loss
     
     global_step = (start_epoch) * train_dataset_length
-    warmup_iter = 0
+    warmup_step = 0
+    max_step = EPOCHS * train_dataset_length
     optimizer = tf.keras.optimizers.Adam(decay=0.005)
 
     train_writer = tf.summary.create_file_writer(LOGDIR)
@@ -27,11 +28,15 @@ def main():
         #train
         train_iter, train_loc_loss, train_conf_loss, train_prob_loss, train_total_loss = 0, 0., 0., 0., 0.
         
-        train_tqdm = tqdm.tqdm(train_dataset, total=train_dataset_length, desc=f'train epoch {epoch}')
+        train_tqdm = tqdm.tqdm(train_dataset, total=train_dataset_length, desc=f'train epoch {epoch}/{EPOCHS}')
         for batch_data in train_tqdm:
+            global_step += 1
+            train_iter += 1
+            warmup_step += 1
+            
             batch_images = batch_data[0]
             batch_labels = batch_data[1:]
-            optimizer.lr.assign(train_utils.lr_scheduler(epoch, warmup_iter))
+            optimizer.lr.assign(train_utils.step_lr_scheduler(global_step, max_step, train_dataset_length, warmup_step))
             
             with tf.GradientTape() as train_tape:
                 preds = model(batch_images, True)
@@ -43,10 +48,6 @@ def main():
             train_conf_loss += train_loss[1]
             train_prob_loss += train_loss[2]
             train_total_loss += train_loss[3]
-            
-            global_step += 1
-            train_iter += 1
-            warmup_iter += 1
             
             train_loss_ = [train_loc_loss/train_iter, train_conf_loss/train_iter,
                            train_prob_loss/train_iter, train_total_loss/train_iter]
@@ -64,7 +65,7 @@ def main():
         # valid
         # if epoch % 5 == 0:
         valid_iter, valid_loc_loss, valid_conf_loss, valid_prob_loss, valid_total_loss = 0, 0, 0, 0, 0
-        valid_tqdm = tqdm.tqdm(valid_dataset, total=valid_dataset_length, desc=f'valid epoch {epoch}')
+        valid_tqdm = tqdm.tqdm(valid_dataset, total=valid_dataset_length, desc=f'valid epoch {epoch}/{EPOCHS}')
         for batch_data in valid_tqdm:
             batch_images = batch_data[0]
             batch_labels = batch_data[1:]

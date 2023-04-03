@@ -44,8 +44,8 @@ class DarknetResidual(Layer):
         self.units = units
         self.kernel_initializer = kernel_initializer
         
-        self.conv1 = DarknetConv(self.units//2, 1)
-        self.conv2 = DarknetConv(self.units, 3)
+        self.conv1 = DarknetConv(self.units//2, 1, kernel_initializer=self.kernel_initializer)
+        self.conv2 = DarknetConv(self.units, 3, kernel_initializer=self.kernel_initializer)
     
     def call(self, input, training=False):
         short_cut = input
