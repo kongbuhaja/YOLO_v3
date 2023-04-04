@@ -4,15 +4,16 @@ import numpy as np
 from utils import aug_utils, bbox_utils, anchor_utils
 
 class DataLoader():
-    def __init__(self, dtype=DTYPE, batch_size=BATCH_SIZE, anchors=ANCHORS, num_classes=NUM_CLASSES,
+    def __init__(self, dtype=DTYPE, batch_size=BATCH_SIZE, anchors=ANCHORS, num_anchors=NUM_ANCHORS, num_classes=NUM_CLASSES,
                  image_size=IMAGE_SIZE, strides=STRIDES, iou_threshold=IOU_THRESHOLD, max_bboxes=MAX_BBOXES):
                  
         self.batch_size = batch_size
-        self.num_anchors = len(anchors)
+        self.num_anchors = num_anchors
+        self.len_anchors = len(ANCHORS)
         self.num_classes = num_classes
         self.image_size = image_size
         self.strides = np.array(strides)
-        self.anchors = np.array(anchors)
+        self.anchors = anchor_utils.get_anchors_xywh(anchors, self.strides, self.image_size)
         self.iou_threshold = iou_threshold
         self.max_bboxes = max_bboxes
         self.dtype = dtype
@@ -74,8 +75,8 @@ class DataLoader():
         return image, labels
     
     def py_labels_to_grids(self, image, labels):
-        s_grid, m_grid, l_grid = tf.py_function(self.labels_to_grids, [labels], [tf.float32, tf.float32, tf.float32])
-        return image, s_grid, m_grid, l_grid
+        grids = tf.py_function(self.labels_to_grids, [labels], [tf.float32]*self.len_anchors)
+        return image, *grids
     
     @tf.function
     def tf_preprocessing(self, image, labels, width, height):
@@ -85,49 +86,48 @@ class DataLoader():
     
     @tf.function
     def tf_labels_to_grids(self, image, labels):
-        s_grid, m_grid, l_grid = self.labels_to_grids2(labels)
-        return tf.cast(image, tf.float32), s_grid, m_grid, l_grid
+        grids = self.labels_to_grids2(labels)
+        return image, *grids
         
     def labels_to_grids(self, labels):
-        grids = []
+        grids = [tf.zeros((self.batch_size, self.image_size//stride, self.image_size//stride , self.num_anchors, 5+self.num_classes)) for stride in self.strides]
+        ious = [tf.zeros((self.batch_size, self.image_size//stride, self.image_size//stride , self.num_anchors, 100), dtype=tf.float32) for stride in self.strides]
         best_ious = tf.zeros((self.batch_size, self.max_bboxes))
-        anchors = anchor_utils.get_anchors_xywh(self.anchors, self.strides, self.image_size)
     
-        no_obj = tf.reduce_sum(labels[..., 2:4], -1) == 0
-        conf = tf.cast(tf.where(no_obj, tf.zeros_like(no_obj), tf.ones_like(no_obj)), tf.float32)[..., None]
-        onehot = tf.where(no_obj[..., None], tf.zeros_like(conf), tf.one_hot(tf.cast(labels[..., 4], dtype=tf.int32), NUM_CLASSES))
+        no_obj = (tf.reduce_sum(labels[..., 2:4], -1) == 0)[..., None]
+        conf = tf.cast(tf.where(no_obj, tf.zeros_like(no_obj), tf.ones_like(no_obj)), tf.float32)
+        onehot = tf.where(no_obj, tf.zeros_like(conf), tf.one_hot(tf.cast(labels[..., 4], dtype=tf.int32), NUM_CLASSES))
         conf_onehot = tf.concat([conf, onehot], -1)
         
-        for i in range(self.strides.shape[0]):
-            anchor = tf.concat([anchors[i][..., :2] + 0.5, anchors[i][..., 2:]],-1)
+        for i in range(self.len_anchors):
+            anchor = tf.concat([self.anchors[i][..., :2] + 0.5, self.anchors[i][..., 2:]],-1)
             scaled_bboxes = labels[..., :4] / self.strides[i]
             
-            ious = bbox_utils.bbox_iou(anchor[..., None,:], scaled_bboxes[:,None,None,None])
+            ious[i] = bbox_utils.bbox_iou(anchor[..., None,:], scaled_bboxes[:,None,None,None])
             
             new_labels =  tf.concat([scaled_bboxes, conf_onehot], -1)
             
-            max_ious_id = tf.argmax(ious, -1)
-            max_ious_mask = tf.cast(tf.reduce_max(ious, -1)[..., None] >= self.iou_threshold, tf.float32)
-            grid = tf.gather(new_labels, max_ious_id, batch_dims=1) * max_ious_mask
-            grids.append(grid)
+            max_ious_id = tf.argmax(ious[i], -1)
+     
+            max_ious_mask = tf.cast(tf.reduce_max(ious[i], -1)[..., None] >= self.iou_threshold, tf.float32)
+            grids[i] = tf.gather(new_labels, max_ious_id, batch_dims=1) * max_ious_mask
             
-            best_ious = tf.maximum(tf.reduce_max(ious, [1,2,3]), best_ious)
+            best_ious = tf.maximum(tf.reduce_max(ious[i], [1,2,3]), best_ious)
 
         if tf.reduce_any(best_ious < self.iou_threshold):
-            for i in range(self.strides.shape[0]):
-                anchor = tf.concat([anchors[i][..., :2] + 0.5, anchors[i][..., 2:]],-1)
+            for i in range(self.len_anchors):
+                anchor = tf.concat([self.anchors[i][..., :2] + 0.5, self.anchors[i][..., 2:]],-1)
                 
                 scaled_bboxes = labels[..., :4] / self.strides[i]
                 
-                ious = bbox_utils.bbox_iou(anchor[..., None,:], scaled_bboxes[:,None,None,None])
                 non_zero_ious_mask = tf.cast(tf.where(best_ious!=0, tf.ones_like(best_ious), tf.zeros_like(best_ious)), tf.bool)[:,None,None,None]
 
-                best_mask = tf.reduce_any(tf.math.logical_and((ious == best_ious[:,None,None,None]), non_zero_ious_mask), -1)[..., None]
+                best_mask = tf.reduce_any(tf.math.logical_and((ious[i] == best_ious[:,None,None,None]), non_zero_ious_mask), -1)[..., None]
                 
                 if tf.reduce_any(best_mask):
                     new_labels =  tf.concat([scaled_bboxes, conf_onehot], -1)
                     
-                    max_ious_id = tf.argmax(ious, -1)
+                    max_ious_id = tf.argmax(ious[i], -1)
                     best_masked_grid = tf.gather(new_labels, max_ious_id, batch_dims=1) * tf.cast(best_mask, tf.float32)
                     
                     grids[i] = tf.where(best_mask, best_masked_grid, grids[i])
@@ -135,19 +135,18 @@ class DataLoader():
     
     @tf.function
     def labels_to_grids2(self, labels):
-        grids = [tf.zeros((self.batch_size, self.image_size//stride, self.image_size//stride , self.num_anchors, 5+self.num_classes)) for stride in self.strides]
+        # grids = [tf.zeros((self.batch_size, self.image_size//stride, self.image_size//stride , self.num_anchors, 5+self.num_classes)) for stride in self.strides]
+        grids = [tf.TensorArray(tf.float32, 1) for stride in self.strides]
         best_ious = tf.zeros((self.batch_size, self.max_bboxes))
-        best_mask = [tf.zeros((self.batch_size, self.image_size//stride, self.image_size//stride , self.num_anchors, 1), dtype=tf.bool) for stride in self.strides]
-        ious = [tf.zeros((self.batch_size, self.image_size//stride, self.image_size//stride , self.num_anchors, 100), dtype=tf.bool) for stride in self.strides]
-        anchors = anchor_utils.get_anchors_xywh(self.anchors, self.strides, self.image_size)
+        ious = [tf.zeros((self.batch_size, self.image_size//stride, self.image_size//stride , self.num_anchors, 100), dtype=tf.float32) for stride in self.strides]
     
         no_obj = tf.reduce_sum(labels[..., 2:4], -1) == 0
         conf = tf.cast(tf.where(no_obj, tf.zeros_like(no_obj), tf.ones_like(no_obj)), tf.float32)[..., None]
         onehot = tf.where(no_obj[..., None], tf.zeros_like(conf), tf.one_hot(tf.cast(labels[..., 4], dtype=tf.int32), NUM_CLASSES))
         conf_onehot = tf.concat([conf, onehot], -1)
         
-        for i in range(self.num_anchors):
-            anchor = tf.concat([anchors[i][..., :2] + 0.5, anchors[i][..., 2:]],-1)
+        for i in range(self.len_anchors):
+            anchor = tf.concat([self.anchors[i][..., :2] + 0.5, self.anchors[i][..., 2:]],-1)
             scaled_bboxes = labels[..., :4] / self.strides[i]
             
             ious[i] = bbox_utils.bbox_iou(anchor[..., None,:], scaled_bboxes[:,None,None,None])
@@ -156,36 +155,30 @@ class DataLoader():
             
             max_ious_id = tf.argmax(ious[i], -1)
             max_ious_mask = tf.cast(tf.reduce_max(ious[i], -1)[..., None] >= self.iou_threshold, tf.float32)
-            grid = tf.gather(new_labels, max_ious_id, batch_dims=1) * max_ious_mask
-            grids[i] = grid
-            
+            # grids[i] = tf.gather(new_labels, max_ious_id, batch_dims=1) * max_ious_mask
+            grids[i].write(0, tf.gather(new_labels, max_ious_id, batch_dims=1) * max_ious_mask)
             best_ious = tf.maximum(tf.reduce_max(ious[i], [1,2,3]), best_ious)
         
         if tf.reduce_any(best_ious < self.iou_threshold):
-            for i in range(self.num_anchors):
-                anchor = tf.concat([anchors[i][..., :2] + 0.5, anchors[i][..., 2:]],-1)
+            for i in range(self.len_anchors):
+                anchor = tf.concat([self.anchors[i][..., :2] + 0.5, self.anchors[i][..., 2:]],-1)
                 
                 scaled_bboxes = labels[..., :4] / self.strides[i]
                 
-                # ious = bbox_utils.bbox_iou(anchor[..., None,:], scaled_bboxes[:,None,None,None])
                 non_zero_ious_mask = tf.cast(tf.where(best_ious!=0, tf.ones_like(best_ious), tf.zeros_like(best_ious)), tf.bool)[:,None,None,None]
-                # print(best_ious[:,None,None,None].shape, ious.shape, non_zero_ious_mask.shape)
-                best_mask[i] = tf.reduce_any(tf.math.logical_and((ious[i] == best_ious[:,None,None,None]), non_zero_ious_mask), -1)[..., None]
-                
-                if tf.reduce_any(best_mask[i]):
+                best_mask = tf.reduce_any(tf.math.logical_and((ious[i] == best_ious[:,None,None,None]), non_zero_ious_mask), -1)[..., None]
+      
+                if tf.reduce_any(best_mask):
                     new_labels =  tf.concat([scaled_bboxes, conf_onehot], -1)
-                    print(best_mask[i].dtype)
                     max_ious_id = tf.argmax(ious[i], -1)
-                    best_masked_grid = tf.gather(new_labels, max_ious_id, batch_dims=1) * tf.cast(best_mask[i], tf.float32)
-                
-                    grids[i] = tf.where(best_mask[i], best_masked_grid, grids[i])
-        return grids
+                    best_masked_grid = tf.gather(new_labels, max_ious_id, batch_dims=1) * tf.cast(best_mask, tf.float32)
+
+                    # grids[i] = tf.where(best_mask, best_masked_grid, grids[i])
+                    grids[i].write(0, tf.where(best_mask, best_masked_grid, grids[i].read(0)))
+        return grids[0].read(0), grids[1].read(0), grids[2].read(0)
     
 def get_padded_shapes():
     return [None, None, None], [MAX_BBOXES, None]
-
-# def get_batch_padded_shapes():
-    
 
 def get_padding_values():
     return tf.constant(0, tf.float32), tf.constant(0, tf.float32)

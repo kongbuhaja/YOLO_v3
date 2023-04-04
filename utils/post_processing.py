@@ -7,7 +7,7 @@ def prediction_to_bbox(grids, anchors):
     batch_size = grids[0].shape[0]
     bboxes = tf.zeros((batch_size,0,4))
     scores = tf.zeros((batch_size, 0))
-    classes = tf.zeros((batch_size, 0), tf.int32)
+    probs = tf.zeros((batch_size, 0))
     for grid, anchor, stride in zip(grids, anchors, STRIDES):
         grid = tf.reshape(grid, [batch_size, -1, 5+NUM_CLASSES])
 

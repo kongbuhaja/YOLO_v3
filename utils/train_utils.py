@@ -2,33 +2,37 @@ import tensorflow as tf
 from config import *
 from utils import io_utils
 
-def step_lr_scheduler(step, max_step, step_per_epoch, warmup_step):
-    lr = warmup_lr_scheduler(warmup_step)
+def lr_scheduler(step, max_step, step_per_epoch, warmup_step):
+    if warmup_step < WARMUP:
+        lr = warmup_lr_scheduler(warmup_step, lr=LR)
+    elif LR_SCHEDULER == 'step':
+        lr = step_lr_scheduler(step, step_per_epoch)
+    elif LR_SCHEDULER == 'poly':
+        lr = poly_lr_scheduler(step, max_step)
+    return lr
+
+def step_lr_scheduler(step, step_per_epoch):    
+    epoch = step / step_per_epoch
     
-    if not lr:
-        epoch = step / step_per_epoch
-        
-        if epoch < 100:
-            lr = LR 
-        elif epoch < 300:
-            lr = LR * 0.1
-        elif epoch < 400:
-            lr = LR * 0.5
-        elif epoch < 500:
-            lr = LR * 0.01
-        else:
-            lr = LR * 0.05
+    if epoch < 100:
+        lr = LR 
+    elif epoch < 300:
+        lr = LR * 0.1
+    elif epoch < 400:
+        lr = LR * 0.5
+    elif epoch < 500:
+        lr = LR * 0.01
+    else:
+        lr = LR * 0.05
 
     return lr
 
-def poly_lr_scheduler(step, max_step, step_per_epoch, warmup_step, init_lr=LR, power=0.9):
+def poly_lr_scheduler(step, max_step, init_lr=LR, power=0.9):
     lr = init_lr*(1-(step/(max_step+1)))**power
-    lr = warmup_lr_scheduler(warmup_step, lr) 
     return lr
             
 def warmup_lr_scheduler(warmup_step, lr=LR):
-    if warmup_step < WARMUP:
-        lr = lr / WARMUP * (warmup_step+1)
+    lr = lr / WARMUP * (warmup_step+1)
     return lr
 
 def load_model(model):

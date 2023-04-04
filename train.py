@@ -28,7 +28,7 @@ def main():
         #train
         train_iter, train_loc_loss, train_conf_loss, train_prob_loss, train_total_loss = 0, 0., 0., 0., 0.
         
-        train_tqdm = tqdm.tqdm(train_dataset, total=train_dataset_length, desc=f'train epoch {epoch}/{EPOCHS}')
+        train_tqdm = tqdm.tqdm(train_dataset, total=train_dataset_length, desc=f'train epoch {epoch}/{EPOCHS}', ascii=' =', colour='red')
         for batch_data in train_tqdm:
             global_step += 1
             train_iter += 1
@@ -36,7 +36,8 @@ def main():
             
             batch_images = batch_data[0]
             batch_labels = batch_data[1:]
-            optimizer.lr.assign(train_utils.step_lr_scheduler(global_step, max_step, train_dataset_length, warmup_step))
+
+            optimizer.lr.assign(train_utils.lr_scheduler(global_step, max_step, train_dataset_length, warmup_step))
             
             with tf.GradientTape() as train_tape:
                 preds = model(batch_images, True)
@@ -65,7 +66,7 @@ def main():
         # valid
         # if epoch % 5 == 0:
         valid_iter, valid_loc_loss, valid_conf_loss, valid_prob_loss, valid_total_loss = 0, 0, 0, 0, 0
-        valid_tqdm = tqdm.tqdm(valid_dataset, total=valid_dataset_length, desc=f'valid epoch {epoch}/{EPOCHS}')
+        valid_tqdm = tqdm.tqdm(valid_dataset, total=valid_dataset_length, desc=f'valid epoch {epoch}/{EPOCHS}', ascii=' =', colour='blue')
         for batch_data in valid_tqdm:
             batch_images = batch_data[0]
             batch_labels = batch_data[1:]
@@ -85,7 +86,7 @@ def main():
             valid_loss_ = [valid_loc_loss / valid_iter, valid_conf_loss / valid_iter, 
                             valid_prob_loss / valid_iter, valid_total_loss / valid_iter]
             
-            tqdm_text = '#total_loss={:.5f}, #loc_loss={:.5f}, #conf_loss={:.5f}, #prob_loss={:.5f}'\
+            tqdm_text = '##total_loss={:.5f}, ##loc_loss={:.5f}, ##conf_loss={:.5f}, ##prob_loss={:.5f}'\
                         .format(valid_loss_[3].numpy(), valid_loss_[0].numpy(), 
                                 valid_loss_[1].numpy(), valid_loss_[2].numpy())
             valid_tqdm.set_postfix_str(tqdm_text)

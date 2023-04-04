@@ -58,7 +58,7 @@ class Dataset():
         
     def _download_dataset(self):
         if not os.path.exists("./data/" + self.dtype):
-            os.mkdir("./data/" + self.dtype)
+            os.makedirs("./data/" + self.dtype)
             tfds.load(self.dtype + '/2012', data_dir='./data/' + self.dtype)
             tfds.load(self.dtype + '/2007', data_dir='./data/' + self.dtype)
             if os.path.exists('./data/' + self.dtype + '/' + self.dtype):
@@ -72,7 +72,7 @@ class Dataset():
         extracted_dir = './data/' + self.dtype + '/downloads/extracted/'
         for dir in os.listdir(extracted_dir):
             if split=="train":
-                if "tra" in dir:
+                if "2012" in dir and "tra" in dir:
                     load_directory.append(extracted_dir + dir)
             elif split=="valid":
                 if "2007" in dir and "test" in dir:

@@ -5,6 +5,7 @@ from models.common import *
 import numpy as np
 from config import *
 from utils import anchor_utils, bbox_utils
+from losses import yolo_loss
 
 class Darknet19_tiny(Layer):
     def __init__(self, **kwargs):
@@ -61,7 +62,7 @@ class Model(Model):
         self.iou_threshold = iou_threshold
         self.num_anchor = num_anchor
         self.eps = eps
-        self.inf = 30.
+        self.inf = 1e+30
 
         self.darknet19_tiny = Darknet19_tiny()
         
@@ -79,7 +80,7 @@ class Model(Model):
     def call(self, input, training):
         m_route, l_route = self.darknet19_tiny(input, training)
         
-        l_route = self.darknetConv8(l_route)
+        l_route = self.darknetConv8(l_route, training)
         
         large_branch = l_route
         for i in range(len(self.large_branch_layers)):
@@ -95,6 +96,9 @@ class Model(Model):
         for i in range(len(self.medium_branch_layers)):
             medium_branch = self.medium_branch_layers[i](medium_branch, training)
         
-        mbbox = Reshape((self.scales[0], self.scales[0], self.num_anchor, 5+self.num_classes))(medium_branch)
+        mbbox = Reshape((self.scales[0], self.scales[0], self.num_anchor, 5 + self.num_classes))(medium_branch)
         
         return mbbox, lbbox
+    
+    def loss(self, labels, preds):
+        return yolo_loss.loss3(labels, preds, self.anchors, self.strides, self.iou_threshold, self.inf, self.eps)

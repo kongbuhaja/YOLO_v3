@@ -95,7 +95,7 @@ def loss2(labels, preds, anchors, strides, iou_threshold, inf=1e+30, eps=1e-7, c
 def loss3(labels, preds, anchors, strides, iou_threshold, inf=1e+30, eps=1e-7, coord=5, noobj=0.5):
     loc_loss, conf_loss, prob_loss = 0., 0., 0.
     batch_size = labels[0].shape[0]
-
+    
     for label, pred, anchor, stride in zip(labels, preds, anchors, strides):
         pred_xy = tf.sigmoid(pred[..., :2])
         pred_wh = pred[..., 2:4]
@@ -134,4 +134,5 @@ def loss3(labels, preds, anchors, strides, iou_threshold, inf=1e+30, eps=1e-7, c
     conf_loss /= batch_size
     prob_loss /= batch_size
     total_loss = loc_loss + conf_loss + prob_loss
+
     return loc_loss, conf_loss, prob_loss, total_loss

@@ -159,9 +159,5 @@ class Model(Model):
 
         return sbbox, mbbox, lbbox
 
-    def binaryCrossEntropy(self, label, pred):
-        pred = tf.minimum(tf.maximum(pred, self.eps), 1-self.eps)
-        return -(label*tf.math.log(pred) + (1.-label)*tf.math.log(1.-pred))
-
     def loss(self, labels, preds):
         return yolo_loss.loss3(labels, preds, self.anchors, self.strides, self.iou_threshold, self.inf, self.eps)
