@@ -8,7 +8,7 @@ def get_anchors_xywh(anchors, strides, image_size):
         scale = image_size // strides[i]
         scale_range = tf.range(scale, dtype=tf.float32)
         x, y = tf.meshgrid(scale_range, scale_range)
-        xy = tf.concat([tf.expand_dims(x, -1), tf.expand_dims(y, -1)], -1)
+        xy = tf.concat([x[..., None], y[..., None]], -1)
 
         wh = tf.constant(anchors[i], dtype=tf.float32) / strides[i]
         xy = tf.tile(xy[:,:,None], (1, 1, len(anchors[i]), 1))

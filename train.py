@@ -2,7 +2,7 @@ import shutil, sys, os, tqdm
 import numpy as np
 import tensorflow as tf
 from config import *
-from utils import data_utils, train_utils, io_utils
+from utils import data_utils, train_utils, io_utils, eval_utils, post_processing, anchor_utils, bbox_utils
 from utils.preset import preset
 
 
@@ -10,10 +10,10 @@ def main():
     dataloader = data_utils.DataLoader()
     train_dataset = dataloader('train')
     train_dataset_length = dataloader.length('train')//BATCH_SIZE
-    valid_dataset = dataloader('valid')
-    valid_dataset_length = dataloader.length('valid')//BATCH_SIZE
+    valid_dataset = dataloader('val', use_label=True)
+    valid_dataset_length = dataloader.length('val')//BATCH_SIZE
     
-    model, start_epoch, max_loss = train_utils.get_model()
+    model, start_epoch, max_mAP, max_loss = train_utils.get_model()
     train_max_loss = valid_max_loss = max_loss
     
     global_step = (start_epoch) * train_dataset_length
@@ -23,10 +23,14 @@ def main():
 
     train_writer = tf.summary.create_file_writer(LOGDIR)
     val_writer = tf.summary.create_file_writer(LOGDIR)
+    
+    anchors = list(map(lambda x: tf.reshape(x,[-1,4]), anchor_utils.get_anchors_xywh(ANCHORS, STRIDES, IMAGE_SIZE)))
+
 
     for epoch in range(start_epoch, EPOCHS):
         #train
         train_iter, train_loc_loss, train_conf_loss, train_prob_loss, train_total_loss = 0, 0., 0., 0., 0.
+        stats = eval_utils.stats()
         
         train_tqdm = tqdm.tqdm(train_dataset, total=train_dataset_length, desc=f'train epoch {epoch}/{EPOCHS}', ascii=' =', colour='red')
         for batch_data in train_tqdm:
@@ -35,13 +39,13 @@ def main():
             warmup_step += 1
             
             batch_images = batch_data[0]
-            batch_labels = batch_data[1:]
+            batch_grids = batch_data[1:]
 
             optimizer.lr.assign(train_utils.lr_scheduler(global_step, max_step, train_dataset_length, warmup_step))
             
             with tf.GradientTape() as train_tape:
                 preds = model(batch_images, True)
-                train_loss = model.loss(batch_labels, preds)
+                train_loss = model.loss(batch_grids, preds)
                 gradients = train_tape.gradient(train_loss[3], model.trainable_variables)
                 optimizer.apply_gradients(zip(gradients, model.trainable_variables))
                 
@@ -53,50 +57,64 @@ def main():
             train_loss_ = [train_loc_loss/train_iter, train_conf_loss/train_iter,
                            train_prob_loss/train_iter, train_total_loss/train_iter]
             
-            io_utils.write_summary(train_writer, global_step, train_loss_, optimizer.lr.numpy())
+            io_utils.write_summary(train_writer, global_step, optimizer.lr.numpy(), train_loss_)
             tqdm_text = 'lr={:.5f}, total_loss={:.5f}, loc_loss={:.5f}, conf_loss={:.5f}, prob_loss={:.5f}'\
                         .format(optimizer.lr.numpy(),
                                 train_loss_[3].numpy(), train_loss_[0].numpy(), 
                                 train_loss_[1].numpy(), train_loss_[2].numpy())
             train_tqdm.set_postfix_str(tqdm_text)
+            
         if train_loss_[3] < train_max_loss:
             train_max_loss = train_loss_[3]
-            train_utils.save_model(model, epoch, train_loss_, False)
+            train_utils.save_model(model, epoch, 0., train_loss_, TRAIN_CHECKPOINTS_DIR)
             
         # valid
-        # if epoch % 5 == 0:
-        valid_iter, valid_loc_loss, valid_conf_loss, valid_prob_loss, valid_total_loss = 0, 0, 0, 0, 0
-        valid_tqdm = tqdm.tqdm(valid_dataset, total=valid_dataset_length, desc=f'valid epoch {epoch}/{EPOCHS}', ascii=' =', colour='blue')
-        for batch_data in valid_tqdm:
-            batch_images = batch_data[0]
-            batch_labels = batch_data[1:]
-            
-            # with tf.GradientTape() as valid_tape:
-            preds = model(batch_images)
-            valid_loss = model.loss(batch_labels, preds)
+        if epoch % EVAL_PER_EPOCHS == 0 or epoch == EPOCHS:
+            valid_iter, valid_loc_loss, valid_conf_loss, valid_prob_loss, valid_total_loss = 0, 0, 0, 0, 0
+            valid_tqdm = tqdm.tqdm(valid_dataset, total=valid_dataset_length, desc=f'valid epoch {epoch}/{EPOCHS}', ascii=' =', colour='blue')
+            for batch_data in valid_tqdm:
+                batch_images = batch_data[0]
+                batch_grids = batch_data[1:4]
+                batch_labels = batch_data[4]
                 
-            valid_loc_loss += valid_loss[0]
-            valid_conf_loss += valid_loss[1]
-            valid_prob_loss += valid_loss[2]
-            valid_total_loss += valid_loss[3]
+                preds = model(batch_images)
+                valid_loss = model.loss(batch_grids, preds)
+                
+                batch_processed_preds = post_processing.prediction_to_bbox(preds, anchors)           
+                for processed_preds, labels in zip(batch_processed_preds, batch_labels):
+                    NMS_preds = post_processing.NMS(processed_preds)
+                    labels = bbox_utils.extract_real_labels(labels)
+                    stats.update_stats(NMS_preds, labels)
+                
+                mAP = stats.calculate_mAP()
+                
+                valid_loc_loss += valid_loss[0]
+                valid_conf_loss += valid_loss[1]
+                valid_prob_loss += valid_loss[2]
+                valid_total_loss += valid_loss[3]
 
-            valid_iter += 1
+                valid_iter += 1
+                
+                valid_loss_ = [valid_loc_loss / valid_iter, valid_conf_loss / valid_iter, 
+                                valid_prob_loss / valid_iter, valid_total_loss / valid_iter]
+                
+                tqdm_text = f'mAP{int(IOU_THRESHOLD * 100)}={mAP:.3f}, '
+                tqdm_text += f'total_loss={valid_loss_[3].numpy():.5f}, '
+                tqdm_text += f'loc_loss={valid_loss_[0].numpy():.5f}, '
+                tqdm_text += f'conf_loss={valid_loss_[1].numpy():.5f}, '
+                tqdm_text += f'prob_loss={valid_loss_[2].numpy():.5f}'
+                valid_tqdm.set_postfix_str(tqdm_text)
             
+            io_utils.write_summary(val_writer, epoch, mAP, valid_loss_, False)
             
-            valid_loss_ = [valid_loc_loss / valid_iter, valid_conf_loss / valid_iter, 
-                            valid_prob_loss / valid_iter, valid_total_loss / valid_iter]
-            
-            tqdm_text = '##total_loss={:.5f}, ##loc_loss={:.5f}, ##conf_loss={:.5f}, ##prob_loss={:.5f}'\
-                        .format(valid_loss_[3].numpy(), valid_loss_[0].numpy(), 
-                                valid_loss_[1].numpy(), valid_loss_[2].numpy())
-            valid_tqdm.set_postfix_str(tqdm_text)
-        
-        
-        io_utils.write_summary(val_writer, epoch, valid_loss_)
+            if valid_loss_[3] < valid_max_loss:
+                valid_max_loss = valid_loss_[3]
+                train_utils.save_model(model, epoch, mAP, valid_loss_, LOSS_CHECKPOINTS_DIR)
 
-        if valid_loss_[3] < valid_max_loss:
-            valid_max_loss = valid_loss_[3]
-            train_utils.save_model(model, epoch, valid_loss_)
+            if mAP > max_mAP:
+                max_mAP = mAP
+                train_utils.save_model(model, epoch, mAP, valid_loss_, MAP_CHECKPOINTS_DIR)
+            
 
         
 

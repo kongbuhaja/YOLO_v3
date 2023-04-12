@@ -2,8 +2,11 @@ import cv2, os, glob, sys, time
 import numpy as np
 from config import *
 
-def draw_labels(image, bboxes, scores, classes):
-    for bbox, score, cls in zip(bboxes.numpy().astype(np.int32), scores.numpy(), classes.numpy().astype(np.int32)):
+def draw_labels(image, preds):
+    bboxes = preds[..., :4].numpy().astype(np.int32)
+    scores = preds[..., 4].numpy()
+    classes = preds[..., 5].numpy().astype(np.int32)
+    for bbox, score, cls in zip(bboxes, scores, classes):
         if np.sum(bbox)==0:
             break;
         color = (np.random.randint(0, 256), np.random.randint(0, 256), np.random.randint(0, 256))

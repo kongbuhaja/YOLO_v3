@@ -33,6 +33,10 @@ def xywh_to_xyxy(boxes, with_label=False):
         labels = tf.concat([labels, boxes[..., 4:5]], -1)
     return labels
 
+def coco_to_xyxy(boxes):
+    bboxes = np.concatenate([boxes[..., :2], boxes[..., :2] + boxes[..., 2:]])
+    return bboxes
+
 def normalize_bbox(w, h, bbox):
     bbox[..., [0,2]] /= w
     bbox[..., [1,3]] /= h
@@ -49,3 +53,13 @@ def bbox_iou_wh_np(wh1, wh2):
     inter_area = inter_section[..., 0] * inter_section[..., 1]
     union_area = np.maximum(wh1[..., 0] * wh1[..., 1] + wh2[..., 0] * wh2[..., 1] - inter_area, 1e-6)
     return inter_area / union_area
+
+def extract_real_labels(labels, xywh=False):
+    if xywh:
+        w = labels[..., 2]
+        h = labels[..., 3]
+    else:
+        w = labels[..., 2] - labels[..., 0]
+        h = labels[..., 3] - labels[..., 1]
+
+    return tf.gather(labels, tf.reshape(tf.where(tf.logical_and(w>0, h>0)), -1))

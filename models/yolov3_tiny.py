@@ -49,7 +49,7 @@ class Darknet19_tiny(Layer):
         
         return m_route, l_route
     
-class Model(Model):
+class YOLO(Model):
     def __init__(self, anchors=ANCHORS, num_classes=NUM_CLASSES, image_size=IMAGE_SIZE, strides=STRIDES,
                  coord=5, noobj=0.5, iou_threshold=IOU_THRESHOLD, num_anchor=NUM_ANCHORS, eps=EPS, **kwargs):
         super().__init__(**kwargs)
@@ -100,5 +100,6 @@ class Model(Model):
         
         return mbbox, lbbox
     
+    @tf.function
     def loss(self, labels, preds):
-        return yolo_loss.loss3(labels, preds, self.anchors, self.strides, self.iou_threshold, self.inf, self.eps)
+        return yolo_loss.v3_loss(labels, preds, self.anchors, self.iou_threshold, self.inf, self.eps)

@@ -17,10 +17,12 @@ def tf_preset():
             print(error)
 
 def checkpoint_preset():
-    if not os.path.exists(VALID_CHECKPOINTS_DIR):
-        os.makedirs(VALID_CHECKPOINTS_DIR)
     if not os.path.exists(TRAIN_CHECKPOINTS_DIR):
         os.makedirs(TRAIN_CHECKPOINTS_DIR)
+    if not os.path.exists(LOSS_CHECKPOINTS_DIR):
+        os.makedirs(LOSS_CHECKPOINTS_DIR)
+    if not os.path.exists(MAP_CHECKPOINTS_DIR):
+        os.makedirs(MAP_CHECKPOINTS_DIR)
         
 def log_preset():
     if not os.path.exists(LOGDIR):

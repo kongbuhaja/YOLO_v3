@@ -9,10 +9,10 @@ import numpy as np
 def main():
     anchors = list(map(lambda x: tf.reshape(x,[-1,4]), anchor_utils.get_anchors_xywh(ANCHORS, STRIDES, IMAGE_SIZE)))
     dataloader = data_utils.DataLoader()
-    test_dataset = dataloader('valid', use_label='test')
-    test_dataset_legnth = dataloader.length('valid')//BATCH_SIZE
+    test_dataset = dataloader('val', use_label='test')
+    test_dataset_legnth = dataloader.length('val')//BATCH_SIZE
     
-    model, _, _ = train_utils.get_model()
+    model, _, _, _ = train_utils.get_model()
     
     stats = eval_utils.stats()
     
@@ -23,32 +23,28 @@ def main():
     test_tqdm = tqdm.tqdm(test_dataset, total=test_dataset_legnth, desc=f'test data prediction')
     for batch_data in test_tqdm:
         batch_images = batch_data[0]
-        batch_labels = batch_data[1]
+        batch_labels = batch_data[4]
         
         all_images.append(batch_images.numpy()[...,::-1]*255.)
         all_grids.append(model(batch_images))
-        all_labels.append(batch_labels)
+        all_labels.append(batch_labels)        
         
-    # NMS구현해서 넣기
-
     inference_tqdm = tqdm.tqdm(range(len(all_images)), desc=f'drawing and calculate')
     for i in inference_tqdm:
         batch_images = all_images[i]
         batch_grids = all_grids[i]
         batch_labels = all_labels[i]
-        batch_bboxes, batch_scores, batch_probs = post_processing.prediction_to_bbox(batch_grids, anchors)
-        for image, bboxes, scores, classes, labels in zip(batch_images.astype(np.uint8), batch_bboxes, batch_scores, batch_probs, batch_labels):
-            NMS_bboxes, NMS_scores, NMS_classes = post_processing.NMS(bboxes, scores, classes)
-            gt_bboxes = bbox_utils.xywh_to_xyxy(labels[..., :4])
-            gt_scores = tf.ones_like(labels[..., 4])
-            gt_classes = labels[..., 4]
+        batch_processed_preds = post_processing.prediction_to_bbox(batch_grids, anchors)
+        for image, processed_preds, labels in zip(batch_images.astype(np.uint8), batch_processed_preds, batch_labels):
+            NMS_preds = post_processing.NMS(processed_preds)
+            labels = bbox_utils.extract_real_labels(labels)
             if DRAW:
-                pred = draw_utils.draw_labels(image.copy(), NMS_bboxes, NMS_scores, NMS_classes)
-                origin = draw_utils.draw_labels(image.copy(), gt_bboxes, gt_scores, gt_classes)
+                pred = draw_utils.draw_labels(image.copy(), NMS_preds)
+                origin = draw_utils.draw_labels(image.copy(), labels)
                 output = np.concatenate([origin, pred], 1)
                 draw_utils.show_and_save_image(output)
 
-            stats.update_stats(NMS_bboxes, NMS_scores, NMS_classes, gt_bboxes, gt_classes)
+            stats.update_stats(NMS_preds, labels)
     stats.calculate_mAP()
     evaluation = stats.get_result()
     print(evaluation)

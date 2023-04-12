@@ -15,23 +15,23 @@ class Darknet53(Layer):
         self.kernel_initializer = kernel_initializer
         
         self.darkentConv1 = DarknetConv(32, 3, kernel_initializer=self.kernel_initializer)
-        self.darknetConv2 = DarknetConv(64, 3, downsample=True, kernel_initializer=self.kernel_initializer)
+        self.darknetConv2 = DarknetConv(64, 3, 2, kernel_initializer=self.kernel_initializer)
         
         self.darknetRes1 = [DarknetResidual(64, kernel_initializer=self.kernel_initializer) for _ in range(1)]
         
-        self.darknetConv3 = DarknetConv(128, 3, downsample=True, kernel_initializer=self.kernel_initializer)
+        self.darknetConv3 = DarknetConv(128, 3, 2, kernel_initializer=self.kernel_initializer)
         
         self.darknetRes2 = [DarknetResidual(128, kernel_initializer=self.kernel_initializer) for _ in range(2)]
         
-        self.darknetConv4 = DarknetConv(256, 3, downsample=True,kernel_initializer=self.kernel_initializer)
+        self.darknetConv4 = DarknetConv(256, 3, 2,kernel_initializer=self.kernel_initializer)
         
         self.darknetRes3 = [DarknetResidual(256, kernel_initializer=self.kernel_initializer) for _ in range(8)]
         
-        self.darknetConv5 = DarknetConv(512, 3, downsample=True, kernel_initializer=self.kernel_initializer)
+        self.darknetConv5 = DarknetConv(512, 3, 2, kernel_initializer=self.kernel_initializer)
         
         self.darknetRes4 = [DarknetResidual(512, kernel_initializer=self.kernel_initializer) for _ in range(8)]
         
-        self.darknetConv6 = DarknetConv(1024, 3, downsample=True, kernel_initializer=self.kernel_initializer)
+        self.darknetConv6 = DarknetConv(1024, 3, 2, kernel_initializer=self.kernel_initializer)
         
         self.darknetRes5 = [DarknetResidual(1024, kernel_initializer=self.kernel_initializer) for _ in range(4)]
 
@@ -66,7 +66,7 @@ class Darknet53(Layer):
 
         return s_route, m_route, x
 
-class Model(Model):
+class YOLO(Model):
     def __init__(self, anchors=ANCHORS, num_classes=NUM_CLASSES, image_size=IMAGE_SIZE, strides=STRIDES,
                  iou_threshold=IOU_THRESHOLD, num_anchor=NUM_ANCHORS, eps=EPS, kernel_initializer=glorot, **kwargs):
         super().__init__(**kwargs)
@@ -80,7 +80,7 @@ class Model(Model):
         self.inf = 1e+30
         self.kernel_initializer = kernel_initializer
 
-        self.darknet53 = Darknet53()
+        self.darknet53 = Darknet53(kernel_initializer=self.kernel_initializer)
         
         self.large_layers  = [DarknetConv(512, 1, kernel_initializer=self.kernel_initializer),
                               DarknetConv(1024, 3, kernel_initializer=self.kernel_initializer),
@@ -158,6 +158,7 @@ class Model(Model):
         sbbox = Reshape((self.scales[0], self.scales[0], self.num_anchor, 5+self.num_classes))(small_branch)
 
         return sbbox, mbbox, lbbox
-
+    
+    @tf.function
     def loss(self, labels, preds):
-        return yolo_loss.loss3(labels, preds, self.anchors, self.strides, self.iou_threshold, self.inf, self.eps)
+        return yolo_loss.v3_loss(labels, preds, self.anchors, self.iou_threshold, self.inf, self.eps)

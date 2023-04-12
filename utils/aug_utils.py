@@ -16,7 +16,7 @@ def augmentation(image, labels, width, height):
 def tf_augmentation(image, labels, width, height):
     bboxes = labels[..., :4]
     color_methods = [random_brigthness, random_hue, random_saturation]
-    geometric_methods = [random_flip_horizontally, random_flip_vertically]
+    geometric_methods = [random_flip_horizontally, random_flip_vertically, random_crop]
     for augmentation_method in geometric_methods + color_methods:
         image, bboxes, width, height = randomly_apply(augmentation_method, image, bboxes, width, height)
     labels = tf.concat([bboxes, labels[..., 4:5]], -1)
@@ -76,6 +76,9 @@ def randomly_apply(method, image, bboxes, width, height):
 def random_crop(image, bboxes, width, height):
     bbox_left_top = tf.reduce_min(bboxes[..., :2], axis=0)
     bbox_right_bottom = tf.reduce_max(bboxes[..., 2:], axis=0)
+    
+    if tf.reduce_any(bbox_left_top > tf.reduce_max([width, height])):
+        return image, bboxes, width, height
     
     crop_left = tf.cast(tf.random.uniform(()) * bbox_left_top[0], tf.int32)
     crop_top = tf.cast(tf.random.uniform(()) * bbox_left_top[1], tf.int32)

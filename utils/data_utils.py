@@ -21,25 +21,17 @@ class DataLoader():
     def __call__(self, split, use_tfrecord=True, use_label=False):
         if self.dtype == 'voc':
             from datasets.voc_dataset import Dataset
+        elif self.dtype == 'coco':
+            from datasets.coco_dataset import Dataset
         elif self.dtype == 'custom':
             from datasets.custom_dataset import Dataset
         dataset = Dataset(split)
 
-        if use_tfrecord:
-            dataset.make_tfrecord()
-            data = dataset.read_tfrecord()
-            
-        else:
-            dataset.load()
-            data_gen = dataset.generator
-            data = tf.data.Dataset.from_generator(data_gen, 
-                                                  output_types=(tf.uint8, tf.float32, tf.float32, tf.float32),
-                                                  output_shapes=((None, None, 3), (None, 5), (), ()))
-
-        data = data.cache()
+        data = dataset.load(use_tfrecord)
+        # data = data.cache()
         
         if split == 'train':
-            data = data.shuffle(buffer_size = self.length(split) * 10)
+            data = data.shuffle(buffer_size = min(self.length(split) * 3, 30000)) # ram memory limit
             # data = data.map(self.py_augmentation, num_parallel_calls=-1)
             data = data.map(aug_utils.tf_augmentation, num_parallel_calls=-1)
         
@@ -47,11 +39,7 @@ class DataLoader():
         data = data.map(self.tf_preprocessing, num_parallel_calls=-1)
         data = data.padded_batch(self.batch_size, padded_shapes=get_padded_shapes(), padding_values=get_padding_values(), drop_remainder=True)
         
-        if use_label:
-            data = data.prefetch(1)
-        else:
-            # data = data.map(self.tf_labels_to_grids, num_parallel_calls=-1).prefetch(1)
-            data = data.map(self.py_labels_to_grids, num_parallel_calls=-1).prefetch(1)
+        data = data.map(lambda x, y: self.py_labels_to_grids(x, y, use_label), num_parallel_calls=-1).prefetch(1)
         return data
     
     def length(self, split):
@@ -74,14 +62,17 @@ class DataLoader():
         
         return image, labels
     
-    def py_labels_to_grids(self, image, labels):
+    def py_labels_to_grids(self, image, labels, use_label=False):
+        # image, labels = data
         grids = tf.py_function(self.labels_to_grids, [labels], [tf.float32]*self.len_anchors)
+        if use_label:
+            labels = tf.concat([labels[..., :4], tf.ones_like(labels[..., 4:5]), labels[..., 4:5]], -1)
+            return image, *grids, labels
         return image, *grids
     
     @tf.function
     def tf_preprocessing(self, image, labels, width, height):
         image, labels = aug_utils.tf_resize_padding(image, labels, width, height, self.image_size)
-        labels = bbox_utils.xyxy_to_xywh(labels, True)
         return tf.cast(image, tf.float32)/255., labels
     
     @tf.function
@@ -99,6 +90,7 @@ class DataLoader():
         onehot = tf.where(no_obj, tf.zeros_like(conf), tf.one_hot(tf.cast(labels[..., 4], dtype=tf.int32), NUM_CLASSES))
         conf_onehot = tf.concat([conf, onehot], -1)
         
+        labels = bbox_utils.xyxy_to_xywh(labels, True)
         for i in range(self.len_anchors):
             anchor = tf.concat([self.anchors[i][..., :2] + 0.5, self.anchors[i][..., 2:]],-1)
             scaled_bboxes = labels[..., :4] / self.strides[i]

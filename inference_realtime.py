@@ -37,13 +37,14 @@ def main():
             resized_frame, pad = aug_utils.tf_resize_padding(cv2.cvtColor(origin_frame, cv2.COLOR_BGR2RGB), 
                                                              tf.zeros((1,5)), width, height, IMAGE_SIZE)
             grids = model(tf.cast(resized_frame[None], tf.float32)/255.)
-            # shpae 신경쓰기
-            bboxes, scores, probs = post_processing.prediction_to_bbox(grids, anchors)
-            NMS_bboxes, NMS_scores, NMS_classes = post_processing.NMS(bboxes[0], scores[0], probs[0])
-
-            NMS_bboxes = (NMS_bboxes - pad[..., :4])/ratio
             
-            pred = draw_utils.draw_labels(origin_frame, NMS_bboxes, NMS_scores, NMS_classes)
+            processed_preds = post_processing.prediction_to_bbox(grids, anchors)
+            NMS_preds = post_processing.NMS(processed_preds)
+
+            NMS_bboxes = (NMS_preds[..., :4] - pad[..., :4])/ratio
+            
+            NMS_preds = tf.concat([NMS_bboxes, NMS_preds[4:]])
+            pred = draw_utils.draw_labels(origin_frame, NMS_preds)
                         
             sec = cur_time - prev_time
             fps = 1 / sec
