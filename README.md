@@ -1,4 +1,6 @@
 # YOLOv3 
+Most of the code is based on YOLOv3 paper, but small parts are modified  
+
 ## Inference coco (gt vs pred)   
 ### YOLOv3 
 mAP50: 0.10606894  
