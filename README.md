@@ -1,7 +1,8 @@
 # YOLOv3 
-Most of the code is based on YOLOv3 paper, but small parts are modified  
+Most of the code is based on YOLOv3 paper, but small parts are modified.  
 
-## Inference coco (gt vs pred)   
+## Inference coco (gt vs pred)  
+Coco data is too huge, so i trained samll epoch.  
 ### YOLOv3 
 mAP50: 0.10606894  
 ![truth_and_pred_0](https://user-images.githubusercontent.com/42567320/234242047-9445f6b7-3d15-4366-83eb-d27478093c67.jpg) 
@@ -10,6 +11,9 @@ mAP50: 0.10606894
 ![truth_and_pred_3](https://user-images.githubusercontent.com/42567320/234242081-ae0f59e9-e602-4c44-b36b-2110e9091082.jpg) 
 
 ## Inference voc (gt vs pred)  
+I think mAP is too low, because voc data is labeled as loose standard.  
+We can see loose label in gt_images.  
+But prediction works well.
 ### YOLOv3  
 mAP50: 0.25553376  
 ![truth_and_pred_0](https://user-images.githubusercontent.com/42567320/234242697-2c947fc4-c166-4a2b-bb71-8425e0f8558b.jpg) 
@@ -27,7 +31,6 @@ mAP50: 0.22488195
  
 ### YOLOv3_tiny 
 mAP50: 0.74103535 
-
 
 ## pretrained model 
 https://drive.google.com/drive/folders/1AwPJ_N0durYlG2zpokQjVlg2CKyGfr7L?usp=sharing
