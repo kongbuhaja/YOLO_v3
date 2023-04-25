@@ -14,8 +14,8 @@ mAP50: 0.25553376
 ![truth_and_pred_3](https://user-images.githubusercontent.com/42567320/234242706-55a0ab23-6c52-4b30-997b-fb184ef8cf13.jpg) 
 ![truth_and_pred_4](https://user-images.githubusercontent.com/42567320/234242717-fed1e652-b946-4efe-b43d-ca5b998720af.jpg) 
 ![truth_and_pred_5](https://user-images.githubusercontent.com/42567320/234242726-a870bd3f-bce1-409f-a104-01384b0ebec0.jpg) 
-### YOLOv3_tiny 
-mAP50: 0.22488195 
+### YOLOv3_tiny  
+mAP50: 0.22488195   
 ![truth_and_pred_0](https://user-images.githubusercontent.com/42567320/234242889-6c62adb7-5b13-4267-8fe2-953584678a6d.jpg) 
 ![truth_and_pred_3](https://user-images.githubusercontent.com/42567320/234242898-a12f13ce-adb6-444c-8879-7c64c2a49718.jpg) 
 ![truth_and_pred_4](https://user-images.githubusercontent.com/42567320/234242908-874592c1-60f3-4de9-90c3-82e2ed0dc23e.jpg) 
