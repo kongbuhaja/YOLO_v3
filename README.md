@@ -7,9 +7,9 @@ mAP50: 0.10606894
 ![truth_and_pred_2](https://user-images.githubusercontent.com/42567320/234242074-29808aff-40af-4340-9578-87e968f93964.jpg) 
 ![truth_and_pred_3](https://user-images.githubusercontent.com/42567320/234242081-ae0f59e9-e602-4c44-b36b-2110e9091082.jpg) 
 
-## Inference voc 
-### YOLOv3 
-mAP50: 0.25553376 
+## Inference voc  
+### YOLOv3  
+mAP50: 0.25553376  
 ![truth_and_pred_0](https://user-images.githubusercontent.com/42567320/234242697-2c947fc4-c166-4a2b-bb71-8425e0f8558b.jpg) 
 ![truth_and_pred_3](https://user-images.githubusercontent.com/42567320/234242706-55a0ab23-6c52-4b30-997b-fb184ef8cf13.jpg) 
 ![truth_and_pred_4](https://user-images.githubusercontent.com/42567320/234242717-fed1e652-b946-4efe-b43d-ca5b998720af.jpg) 
