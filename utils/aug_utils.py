@@ -81,20 +81,20 @@ def random_crop(image, bboxes, width, height):
         return image, bboxes, width, height
     elif tf.reduce_sum(bboxes) == 0:
         return image, bboxes, width, height
-    
-    crop_left = tf.cast(tf.random.uniform(()) * bbox_left_top[0], tf.int32)
-    crop_top = tf.cast(tf.random.uniform(()) * bbox_left_top[1], tf.int32)
-    crop_right = tf.cast(tf.random.uniform(()) * (width - bbox_right_bottom[0]) + bbox_right_bottom[0], tf.int32)
-    crop_bottom = tf.cast(tf.random.uniform(()) * (height - bbox_right_bottom[1]) + bbox_right_bottom[1], tf.int32)
-    
-    crop_image = image[crop_top:crop_bottom, crop_left:crop_right]
+    else:
+        crop_left = tf.cast(tf.random.uniform(()) * bbox_left_top[0], tf.int32)
+        crop_top = tf.cast(tf.random.uniform(()) * bbox_left_top[1], tf.int32)
+        crop_right = tf.cast(tf.random.uniform(()) * (width - bbox_right_bottom[0]) + bbox_right_bottom[0], tf.int32)
+        crop_bottom = tf.cast(tf.random.uniform(()) * (height - bbox_right_bottom[1]) + bbox_right_bottom[1], tf.int32)
+        
+        crop_image = image[crop_top:crop_bottom, crop_left:crop_right]
 
-    bboxes -= tf.cast(tf.tile(tf.stack([crop_left, crop_top], -1)[None], [1,2]), tf.float32)
-    
-    width = tf.cast(crop_right - crop_left, tf.float32)
-    height = tf.cast(crop_bottom - crop_top, tf.float32)
-    
-    return crop_image, bboxes, width, height
+        bboxes -= tf.cast(tf.tile(tf.stack([crop_left, crop_top], -1)[None], [1,2]), tf.float32)
+        
+        width = tf.cast(crop_right - crop_left, tf.float32)
+        height = tf.cast(crop_bottom - crop_top, tf.float32)
+        
+        return crop_image, bboxes, width, height
 
 @tf.function
 def random_flip_horizontally(image, bboxes, width, height):
