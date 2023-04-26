@@ -16,8 +16,8 @@ def v3_conf_loss(label_xywhc, pred_xywhc_raw, anchor, iou_threshold, inf, eps, n
     resp_mask = label_xywhc[..., 4:5]
     noresp_mask = (1.0 - resp_mask) * tf.cast(ious < iou_threshold, dtype=tf.float32)
     
-    obj_loss = tf.minimum(tf.reduce_sum(resp_mask * binaryCrossEntropy(resp_mask, pred_conf, eps), [1,2,3,4]), inf)
-    noobj_loss = tf.minimum(noobj * tf.reduce_sum(noresp_mask * binaryCrossEntropy(resp_mask, pred_conf, eps), [1,2,3,4]), inf)
+    obj_loss = tf.reduce_sum(tf.minimum(resp_mask * binaryCrossEntropy(resp_mask, pred_conf, eps), inf), [1,2,3,4])
+    noobj_loss = noobj * tf.reduce_sum(tf.minimum(noresp_mask * binaryCrossEntropy(resp_mask, pred_conf, eps), inf), [1,2,3,4])
     
     return obj_loss + noobj_loss
 
@@ -35,7 +35,7 @@ def v2_conf_loss(label_xywhc, pred_xywhc_raw, anchor, iou_threshold, inf, eps, n
     resp_mask = label_xywhc[..., 4:5]
     noresp_mask = (1.0 - resp_mask) * tf.cast(ious < iou_threshold, dtype=tf.float32)
     
-    obj_loss = tf.minmum(tf.reduce_sum(resp_mask * tf.square((resp_mask - pred_conf)), [1,2,3,4]), inf)
-    noobj_loss = tf.minimum(tf.reduce_sum(noobj * noresp_mask * tf.square((resp_mask - pred_conf)), [1,2,3,4]), inf)
+    obj_loss = tf.reduce_sum(tf.minmum(resp_mask * tf.square(resp_mask - pred_conf), inf), [1,2,3,4])
+    noobj_loss = tf.reduce_sum(tf.minimum(noobj * noresp_mask * tf.square(resp_mask - pred_conf), inf), [1,2,3,4])
     
     return obj_loss + noobj_loss

@@ -16,9 +16,10 @@ def main():
     model, start_epoch, max_mAP, max_loss = train_utils.get_model()
     train_max_loss = valid_max_loss = max_loss
     
-    global_step = (start_epoch) * train_dataset_length
+    global_step = (start_epoch-1) * train_dataset_length + 1
     warmup_step = 0
-    max_step = EPOCHS * train_dataset_length
+    warmup_max_step = train_dataset_length * WARMUP_EPOCHS
+    max_step = EPOCHS * train_dataset_length + 1
     optimizer = tf.keras.optimizers.Adam(decay=0.005)
 
     train_writer = tf.summary.create_file_writer(LOGDIR)
@@ -27,7 +28,7 @@ def main():
     anchors = list(map(lambda x: tf.reshape(x,[-1,4]), anchor_utils.get_anchors_xywh(ANCHORS, STRIDES, IMAGE_SIZE)))
 
 
-    for epoch in range(start_epoch, EPOCHS):
+    for epoch in range(start_epoch, EPOCHS + 1):
         #train
         train_iter, train_loc_loss, train_conf_loss, train_prob_loss, train_total_loss = 0, 0., 0., 0., 0.
         stats = eval_utils.stats()
@@ -41,7 +42,7 @@ def main():
             batch_images = batch_data[0]
             batch_grids = batch_data[1:]
 
-            optimizer.lr.assign(train_utils.lr_scheduler(global_step, max_step, train_dataset_length, warmup_step))
+            optimizer.lr.assign(train_utils.lr_scheduler(global_step, max_step, train_dataset_length, warmup_step, warmup_max_step))
             
             with tf.GradientTape() as train_tape:
                 preds = model(batch_images, True)
@@ -74,8 +75,8 @@ def main():
             valid_tqdm = tqdm.tqdm(valid_dataset, total=valid_dataset_length, desc=f'valid epoch {epoch}/{EPOCHS}', ascii=' =', colour='blue')
             for batch_data in valid_tqdm:
                 batch_images = batch_data[0]
-                batch_grids = batch_data[1:4]
-                batch_labels = batch_data[4]
+                batch_grids = batch_data[1:-1]
+                batch_labels = batch_data[-1]
                 
                 preds = model(batch_images)
                 valid_loss = model.loss(batch_grids, preds)

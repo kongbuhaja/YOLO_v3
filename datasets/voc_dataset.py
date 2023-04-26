@@ -7,45 +7,17 @@ import tqdm
 from config import *
 from PIL import Image
 from utils import anchor_utils, io_utils
-from datasets import common
+from datasets.common import Base_Dataset
 
-class Dataset():
+class Dataset(Base_Dataset):
     def __init__(self, split, dtype=DTYPE, anchors=ANCHORS, labels=LABELS, image_size=IMAGE_SIZE,
                  create_anchors=CREATE_ANCHORS):
-        self.split = split
-        self.dtype = dtype
-        self.anchors = np.array(anchors)
-        self.labels = labels
-        self.image_size = image_size
-        self.create_anchors = create_anchors
-        print(f'Dataset: {self.dtype}')
+        super().__init__(split, dtype, anchors, labels, image_size, create_anchors)
 
     def load(self, use_tfrecord=True):
-        assert self.split in ['train', 'val', 'test'], 'Check your dataset type and split.'
-        common.download_dataset(self.dtype)
-        if self.create_anchors:
-            data, normalized_wh = self.read_files()
-            common.make_new_anchors(normalized_wh)
-            print('Anchors are changed. You need to restart file!')
-            print('Please restart train.py')
-            sys.exit()
-        if use_tfrecord:
-            filepath = f'./data/{self.dtype}/{self.split}.tfrecord'
-            infopath = f'./data/{self.dtype}/{self.split}.txt'
-            if os.path.exists(filepath):
-                print(f'{filepath} is exist')
-            else:
-                data, normalized_wh = self.read_files()
-                common.make_tfrecord(data, filepath, infopath)                
-            return common.read_tfrecord(filepath)
-        else:
-            data, normalized_wh = self.read_files()
-            return tf.data.Dataset.from_generator(common.generator, 
-                                                  output_types=(tf.uint8, tf.float32, tf.float32, tf.float32),
-                                                  output_shapes=((None, None, 3), (None, 5), (), ()))(data)
-
+        return super().load(use_tfrecord)
+    
     def read_files(self):
-        data = []
         normalized_wh = np.zeros((0,2))
         print('Reading local_files...  ', end='', flush=True)
         
@@ -61,19 +33,19 @@ class Dataset():
             for anno_file in anno_files:
                 image_file, labels, labels_wh = self.parse_annotation(anno_dir + anno_file)
                 if self.split != 'test':
-                    data += [[image_dir + image_file, labels]]
+                    self.data += [[image_dir + image_file, labels]]
 
                 if self.create_anchors:
                     normalized_wh = np.concatenate([normalized_wh, labels_wh], 0)    
         else:
             image_files = os.listdir(image_dir)
             for image_file in image_files:
-                data += [[image_dir + image_file, []]]
+                self.data += [[image_dir + image_file, []]]
                 
-        np.random.shuffle(data)
+        np.random.shuffle(self.data)
         print('Done!')
         
-        return data, normalized_wh
+        return normalized_wh
 
     def load_directory(self, split):
         extracted_dir = './data/' + self.dtype + '/downloads/extracted/'

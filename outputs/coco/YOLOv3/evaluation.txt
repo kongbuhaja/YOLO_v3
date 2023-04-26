@@ -1,0 +1,81 @@
+        person|■■■■■■■■                             |0.24
+       bicycle|■■■                                  |0.09
+           car|                                     |0.02
+    motorcycle|■■■                                  |0.09
+      airplane|■■■■■■■■■■■■                         |0.33
+           bus|■■■■■■                               |0.17
+         train|■■■■■■■■■■■■■■■■■                    |0.47
+         truck|■■■                                  |0.09
+          boat|■                                    |0.05
+ traffic light|■                                    |0.05
+  fire hydrant|■■■■                                 |0.12
+     stop sign|■■■■■■■■■■■■■■                       |0.38
+ parking meter|■■■■■                                |0.15
+         bench|■■                                   |0.07
+          bird|■■                                   |0.07
+           cat|■■■■■■■■■■■■                         |0.33
+           dog|■■■                                  |0.09
+         horse|■■■■■                                |0.15
+         sheep|■■■                                  |0.10
+           cow|■■■                                  |0.09
+      elephant|■■■■■■■■■                            |0.24
+          bear|■■■■■■■■■■■■                         |0.33
+         zebra|■■■■■■■■■■■■■■■■■■■                  |0.51
+       giraffe|■■■■■■■■■■■■■■■■■■                   |0.50
+      backpack|                                     |0.00
+      umbrella|■■■                                  |0.09
+       handbag|                                     |0.00
+           tie|■■■                                  |0.09
+      suitcase|■■■                                  |0.09
+       frisbee|                                     |0.00
+          skis|■                                    |0.04
+     snowboard|                                     |0.00
+   sports ball|                                     |0.00
+          kite|                                     |0.00
+  baseball bat|                                     |0.00
+baseball glove|                                     |0.00
+    skateboard|■■■                                  |0.09
+     surfboard|                                     |0.00
+ tennis racket|■■                                   |0.05
+        bottle|■■■                                  |0.09
+    wine glass|                                     |0.00
+           cup|■■                                   |0.06
+          fork|■■■                                  |0.09
+         knife|■                                    |0.05
+         spoon|                                     |0.00
+          bowl|■■■                                  |0.09
+        banana|■■■                                  |0.09
+         apple|                                     |0.00
+      sandwich|■■■                                  |0.09
+        orange|■■■                                  |0.09
+      broccoli|■                                    |0.03
+        carrot|                                     |0.00
+       hot dog|■■                                   |0.07
+         pizza|■■■■■                                |0.16
+         donut|■■■                                  |0.09
+          cake|■■■                                  |0.09
+         chair|■                                    |0.04
+         couch|■■■■                                 |0.11
+  potted plant|■■■                                  |0.09
+           bed|■■■■■■■■                             |0.22
+  dining table|■                                    |0.04
+        toilet|■■■■■■■■■■■■■■■■■                    |0.49
+            tv|■■■■■■■                              |0.19
+        laptop|■■■■■                                |0.15
+         mouse|                                     |0.00
+        remote|                                     |0.00
+      keyboard|■                                    |0.04
+    cell phone|■■                                   |0.06
+     microwave|■■■                                  |0.09
+          oven|■■                                   |0.07
+       toaster|                                     |0.00
+          sink|■■■                                  |0.09
+  refrigerator|■■■                                  |0.10
+          book|                                     |0.02
+         clock|■■■■■                                |0.14
+          vase|■■■                                  |0.09
+      scissors|                                     |0.00
+    teddy bear|■■■■■                                |0.15
+    hair drier|                                     |0.00
+    toothbrush|                                     |0.00
+mAP50: 0.10606894

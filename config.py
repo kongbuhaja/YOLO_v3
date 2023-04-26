@@ -1,27 +1,30 @@
-# train config
-EPOCHS = 400
-BATCH_SIZE = 16
-LR = 1e-2
-WARMUP = 10000
-DTYPE = 'coco'
+# data config
+DTYPE = 'raw'
 IMAGE_SIZE = 416
+BATCH_SIZE = 1
 MAX_BBOXES = 100
+CREATE_ANCHORS = False
+
+# train config
+EPOCHS = 1000
+LR = 1e-3
 LR_SCHEDULER = 'poly'
 IOU_THRESHOLD = 0.5
 COORD = 5
 NOOBJ = 0.5
 EPS = 1e-7
 EVAL_PER_EPOCHS = 5
-CREATE_ANCHORS = False
+WARMUP_EPOCHS = 5
 
 # model config
 MODEL_TYPE = 'YOLOv3'
-CHECKPOINTS_DIR = 'checkpoints/' + DTYPE + '/'
+BASED_DTYPE = 'voc'
+LOAD_CHECKPOINTS = True
+CHECKPOINTS_DIR = 'checkpoints/' + BASED_DTYPE + '/'
 TRAIN_CHECKPOINTS_DIR = CHECKPOINTS_DIR + MODEL_TYPE + '/train_loss/'
 LOSS_CHECKPOINTS_DIR = CHECKPOINTS_DIR + MODEL_TYPE + '/val_loss/'
 MAP_CHECKPOINTS_DIR = CHECKPOINTS_DIR + MODEL_TYPE + '/val_mAP/'
 CHECKPOINTS = MAP_CHECKPOINTS_DIR + MODEL_TYPE
-LOAD_CHECKPOINTS = False
 NUM_ANCHORS = 3
 if MODEL_TYPE == 'YOLOv3':
     STRIDES = [8, 16, 32]
@@ -35,12 +38,12 @@ LOGDIR = 'logs/' + MODEL_TYPE + '_' + DTYPE + '_log'
 NMS_TYPE = 'soft_gaussian'
 SCORE_THRESHOLD = 0.5
 SIGMA = 0.3
-OUTPUT_DIR = 'outputs/'
+OUTPUT_DIR = 'outputs/' + DTYPE + '/' + BASED_DTYPE + '_' + MODEL_TYPE + '/'
 
 # cam config
 VIDEO_PATH = 0
 
-if DTYPE =='voc':
+if BASED_DTYPE =='voc':
     LABELS = ['aeroplane', 'bicycle', 'bird', 'boat', 'bottle',
               'bus', 'car', 'cat', 'chair', 'cow',
               'diningtable', 'dog', 'horse', 'motorbike', 'person',
@@ -50,7 +53,7 @@ if DTYPE =='voc':
     elif MODEL_TYPE == 'YOLOv3_tiny':
         ANCHORS = [[[28, 37], [72, 91], [102, 187]], [[249, 127], [180, 262], [330, 278]]]
 
-elif DTYPE == 'coco':
+elif BASED_DTYPE == 'coco':
     LABELS = ['person', 'bicycle', 'car', 'motorcycle', 'airplane', 
               'bus', 'train', 'truck', 'boat', 'traffic light', 
               'fire hydrant', 'stop sign', 'parking meter', 'bench', 'bird', 
@@ -72,14 +75,14 @@ elif DTYPE == 'coco':
     elif MODEL_TYPE == 'YOLOv3_tiny':
         ANCHORS = [[[9, 37], [71, 89], [100, 183]], [[244, 125], [179, 259], [331, 273]]]
            
-elif DTYPE == 'custom':
+elif BASED_DTYPE == 'custom':
     LABELS = ['Nam Joo-hyuk', 'Kim Da-mi', 'Kim Seong-cheol', 'Yoo Jae-suk', 
               'Kim Tae-ri', 'Choi Woo-shik']
     if MODEL_TYPE == 'YOLOv3':
-        ANCHORS = [[[31, 35], [47, 50], [59, 67]], [[70, 77], [83, 90], [96, 106]], [[117, 129], [151, 170], [199, 227]]]
+        ANCHORS = [[[31, 35], [48, 52], [60, 68]], [[71, 78], [83, 90], [96, 106]], [[118, 129], [152, 171], [200, 228]]]
     elif MODEL_TYPE == 'YOLOv3_tiny':
-        ANCHORS = [[[29, 37], [71, 89], [100, 183]], [[244, 125], [179, 259], [331, 273]]]
+        ANCHORS = [[[36, 39], [60, 67], [85, 93]], [[113, 125], [151, 170], [200, 228]]]
 NUM_CLASSES = len(LABELS)
         
-# draw
-DRAW = False
+# draw config
+DRAW = True

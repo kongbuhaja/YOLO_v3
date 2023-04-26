@@ -2,9 +2,9 @@ import tensorflow as tf
 from config import *
 from utils import io_utils
 
-def lr_scheduler(step, max_step, step_per_epoch, warmup_step):
-    if warmup_step < WARMUP:
-        lr = warmup_lr_scheduler(warmup_step, lr=LR)
+def lr_scheduler(step, max_step, step_per_epoch, warmup_step, warmup_max_step):
+    if warmup_step < warmup_max_step:
+        lr = warmup_lr_scheduler(warmup_step, warmup_max_step, lr=LR)
     elif LR_SCHEDULER == 'step':
         lr = step_lr_scheduler(step, step_per_epoch)
     elif LR_SCHEDULER == 'poly':
@@ -14,7 +14,7 @@ def lr_scheduler(step, max_step, step_per_epoch, warmup_step):
 def step_lr_scheduler(step, step_per_epoch):    
     epoch = step / step_per_epoch
     
-    if epoch < 180:
+    if epoch < 200:
         lr = LR 
     elif epoch < 300:
         lr = LR * 0.5
@@ -31,8 +31,8 @@ def poly_lr_scheduler(step, max_step, init_lr=LR, power=0.9):
     lr = init_lr*(1-(step/(max_step+1)))**power
     return lr
             
-def warmup_lr_scheduler(warmup_step, lr=LR):
-    lr = lr / WARMUP * (warmup_step+1)
+def warmup_lr_scheduler(warmup_step, warmup_max_step, lr=LR):
+    lr = lr / warmup_max_step * (warmup_step+1)
     return lr
 
 def load_model(model):
@@ -48,7 +48,7 @@ def get_model():
     
     if LOAD_CHECKPOINTS:
         return load_model(YOLO())
-    return YOLO(), 0, 0., 1e+50
+    return YOLO(), 1, 0., 1e+50
 
 def save_model(model, epoch, mAP, loss, dir_path):
     checkpoints = dir_path + MODEL_TYPE

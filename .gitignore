@@ -1,0 +1,9 @@
+# file
+*.ipynb
+
+# dir
+/data
+/logs
+/.vscode
+/**/__pycache__
+/checkpoints

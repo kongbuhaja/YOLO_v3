@@ -9,7 +9,7 @@ import numpy as np
 def main():
     anchors = list(map(lambda x: tf.reshape(x,[-1,4]), anchor_utils.get_anchors_xywh(ANCHORS, STRIDES, IMAGE_SIZE)))
     dataloader = data_utils.DataLoader()
-    test_dataset = dataloader('val', use_label='test')
+    test_dataset = dataloader('val', use_label='test', use_tfrecord=False)
     test_dataset_legnth = dataloader.length('val')//BATCH_SIZE
     
     model, _, _, _ = train_utils.get_model()
@@ -20,7 +20,7 @@ def main():
     all_grids = []
     all_labels = []
     
-    test_tqdm = tqdm.tqdm(test_dataset, total=test_dataset_legnth, desc=f'inference data')
+    test_tqdm = tqdm.tqdm(test_dataset, total=test_dataset_legnth, desc=f'test data prediction')
     for batch_data in test_tqdm:
         batch_images = batch_data[0]
         batch_labels = batch_data[-1]
@@ -29,7 +29,7 @@ def main():
         all_grids.append(model(batch_images))
         all_labels.append(batch_labels)        
         
-    inference_tqdm = tqdm.tqdm(range(len(all_images)), desc=f'draw and calculate')
+    inference_tqdm = tqdm.tqdm(range(len(all_images)), desc=f'drawing and calculate')
     for i in inference_tqdm:
         batch_images = all_images[i]
         batch_grids = all_grids[i]

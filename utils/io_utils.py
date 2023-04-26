@@ -55,6 +55,6 @@ def edit_config(pre_text, new_text):
         f.writelines(lines)
     
 def write_eval(text):
-    path = OUTPUT_DIR + DTYPE + '_evaluation.txt'
+    path = OUTPUT_DIR + 'evaluation.txt'
     with open(path, 'w', encoding='utf-8') as f:
         f.write(text)

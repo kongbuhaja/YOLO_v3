@@ -17,6 +17,7 @@ class DataLoader():
         self.iou_threshold = iou_threshold
         self.max_bboxes = max_bboxes
         self.dtype = dtype
+        self._length = {}
 
     def __call__(self, split, use_tfrecord=True, use_label=False):
         if self.dtype == 'voc':
@@ -25,17 +26,18 @@ class DataLoader():
             from datasets.coco_dataset import Dataset
         elif self.dtype == 'custom':
             from datasets.custom_dataset import Dataset
+        elif self.dtype == 'raw':
+            from datasets.raw_dataset import Dataset
         dataset = Dataset(split)
 
         data = dataset.load(use_tfrecord)
-        # data = data.cache()
+        self._length[split] = dataset.length
+        data = data.cache()
         
         if split == 'train':
-            data = data.shuffle(buffer_size = min(self.length(split) * 3, 30000)) # ram memory limit
-            # data = data.map(self.py_augmentation, num_parallel_calls=-1)
+            data = data.shuffle(buffer_size = min(self.length(split) * 3, 20000)) # ram memory limit
             data = data.map(aug_utils.tf_augmentation, num_parallel_calls=-1)
         
-        # data = data.map(self.py_preprocessing, num_parallel_calls=-1)
         data = data.map(self.tf_preprocessing, num_parallel_calls=-1)
         data = data.padded_batch(self.batch_size, padded_shapes=get_padded_shapes(), padding_values=get_padding_values(), drop_remainder=True)
         
@@ -43,27 +45,9 @@ class DataLoader():
         return data
     
     def length(self, split):
-        infopath = f'./data/{self.dtype}/{split}.txt'
-        with open(infopath, 'r') as f:
-            lines = f.readlines()
-        return int(lines[0])
-    
-    def py_augmentation(self, image, labels, width, height):
-        new_image, labels, width, height = tf.py_function(aug_utils.augmentation, [image, labels, width, height], [tf.uint8, tf.float32, tf.float32, tf.float32])
-        return new_image, labels, width, height
-    
-    def py_preprocessing(self, image, labels, width, height):
-        image, labels = tf.py_function(self.preprocessing, [image, labels], [tf.uint8, tf.float32])
-        return tf.cast(image, tf.float32), labels
-    
-    def preprocessing(self, image, labels):
-        image, labels = aug_utils.resize_padding(np.array(image), np.array(labels), self.image_size)
-        labels = bbox_utils.xyxy_to_xywh(labels, True)
-        
-        return image, labels
+        return self._length[split]
     
     def py_labels_to_grids(self, image, labels, use_label=False):
-        # image, labels = data
         grids = tf.py_function(self.labels_to_grids, [labels], [tf.float32]*self.len_anchors)
         if use_label:
             labels = tf.concat([labels[..., :4], tf.ones_like(labels[..., 4:5]), labels[..., 4:5]], -1)
@@ -76,7 +60,7 @@ class DataLoader():
         return tf.cast(image, tf.float32)/255., labels
     
     @tf.function
-    def tf_labels_to_grids(self, image, labels):
+    def tf_labels_to_grids(self, image, labels): # not working
         grids = self.labels_to_grids2(labels)
         return image, *grids
         

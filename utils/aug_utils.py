@@ -77,7 +77,9 @@ def random_crop(image, bboxes, width, height):
     bbox_left_top = tf.reduce_min(bboxes[..., :2], axis=0)
     bbox_right_bottom = tf.reduce_max(bboxes[..., 2:], axis=0)
     
-    if tf.reduce_any(bbox_left_top > tf.reduce_max([width, height])):
+    if tf.reduce_any(bbox_left_top >= bbox_right_bottom):
+        return image, bboxes, width, height
+    elif tf.reduce_sum(bboxes) == 0:
         return image, bboxes, width, height
     
     crop_left = tf.cast(tf.random.uniform(()) * bbox_left_top[0], tf.int32)
