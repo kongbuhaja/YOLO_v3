@@ -1,5 +1,6 @@
 # YOLOv3 
 Most of the code is based on YOLOv3 paper, but small parts are modified.  
+We can train or inference use docker and datasets
 
 ## Inference coco data(gt vs pred)  
 Coco data is too huge, so i trained samll epoch.  
