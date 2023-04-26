@@ -34,4 +34,6 @@ RUN pip3 install tensorflow==2.8 &&\
     pip3 install tensorflow_datasets &&\
     pip3 install gdown
 
+RUN git clone https://github.com/kongbuhaja/YOLO_v3.git
+
 RUN cd /home/
