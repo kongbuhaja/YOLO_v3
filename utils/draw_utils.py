@@ -1,4 +1,4 @@
-import cv2, os, glob, sys, time
+import cv2, glob, sys
 import numpy as np
 from config import *
 

@@ -1,8 +1,5 @@
-import tensorflow as tf
-import tensorflow_datasets as tfds
 import numpy as np
-import os, shutil, sys, json
-import xml.etree.ElementTree as ET
+import os, json
 from config import *
 from utils import bbox_utils
 from datasets.common import Base_Dataset

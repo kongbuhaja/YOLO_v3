@@ -1,11 +1,5 @@
-import tensorflow as tf
-import numpy as np
-import os, shutil, sys, cv2
-import xml.etree.ElementTree as ET
-import tqdm
+import os
 from config import *
-from PIL import Image
-from utils import anchor_utils, io_utils
 from datasets.common import Base_Dataset
 
 class Dataset(Base_Dataset):

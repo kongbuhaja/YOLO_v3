@@ -1,4 +1,3 @@
-import tensorflow as tf
 from config import *
 from utils import io_utils
 

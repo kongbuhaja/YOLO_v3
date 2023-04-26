@@ -1,5 +1,4 @@
 import tensorflow as tf
-from utils import bbox_utils
 from losses.common import *
 from losses.loc_loss import *
 from losses.conf_loss import *

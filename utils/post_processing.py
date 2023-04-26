@@ -1,5 +1,4 @@
 import tensorflow as tf
-import numpy as np
 from config import *
 from utils import bbox_utils
 

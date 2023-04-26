@@ -1,29 +1,32 @@
 import tensorflow as tf
-from tensorflow.keras.layers import Input, Reshape, MaxPooling2D
+from tensorflow.keras.layers import Reshape, MaxPooling2D
+from tensorflow.keras.initializers import GlorotUniform as glorot
+from tensorflow.keras.initializers import HeUniform as he
 from tensorflow.keras import Model
 from models.common import *
 import numpy as np
 from config import *
-from utils import anchor_utils, bbox_utils
+from utils import anchor_utils
 from losses import yolo_loss
 
 class Darknet19_tiny(Layer):
-    def __init__(self, **kwargs):
+    def __init__(self, kernel_initializer=glorot, **kwargs):
         super().__init__(**kwargs)
+        self.kernel_initializer = kernel_initializer
 
-        self.darknetConv1 = DarknetConv(16, 3)
+        self.darknetConv1 = DarknetConv(16, 3, kernel_initializer=self.kernel_initializer)
         
-        self.darknetConv2 = DarknetConv(32, 3)
+        self.darknetConv2 = DarknetConv(32, 3, kernel_initializer=self.kernel_initializer)
         
-        self.darknetConv3 = DarknetConv(64, 3)
+        self.darknetConv3 = DarknetConv(64, 3, kernel_initializer=self.kernel_initializer)
 
-        self.darknetConv4 = DarknetConv(128, 3)
+        self.darknetConv4 = DarknetConv(128, 3, kernel_initializer=self.kernel_initializer)
         
-        self.darknetConv5 = DarknetConv(256, 3)
+        self.darknetConv5 = DarknetConv(256, 3, kernel_initializer=self.kernel_initializer)
         
-        self.darknetConv6 = DarknetConv(512, 3)
+        self.darknetConv6 = DarknetConv(512, 3, kernel_initializer=self.kernel_initializer)
 
-        self.darknetConv7 = DarknetConv(1024, 3)
+        self.darknetConv7 = DarknetConv(1024, 3, kernel_initializer=self.kernel_initializer)
 
     def call(self, input, training=False):
         x = self.darknetConv1(input, training)
@@ -51,7 +54,7 @@ class Darknet19_tiny(Layer):
     
 class YOLO(Model):
     def __init__(self, anchors=ANCHORS, num_classes=NUM_CLASSES, image_size=IMAGE_SIZE, strides=STRIDES,
-                 coord=5, noobj=0.5, iou_threshold=IOU_THRESHOLD, num_anchor=NUM_ANCHORS, eps=EPS, **kwargs):
+                 coord=5, noobj=0.5, iou_threshold=IOU_THRESHOLD, num_anchor=NUM_ANCHORS, eps=EPS, kernel_initializer=glorot, **kwargs):
         super().__init__(**kwargs)
         self.num_classes = num_classes
         self.strides = np.array(strides)
@@ -63,19 +66,20 @@ class YOLO(Model):
         self.num_anchor = num_anchor
         self.eps = eps
         self.inf = 1e+30
+        self.kernel_initializer = kernel_initializer
 
-        self.darknet19_tiny = Darknet19_tiny()
+        self.darknet19_tiny = Darknet19_tiny(kernel_initializer=self.kernel_initializer)
         
-        self.darknetConv8 = DarknetConv(256, 1)
+        self.darknetConv8 = DarknetConv(256, 1, kernel_initializer=self.kernel_initializer)
         
-        self.large_branch_layers = [DarknetConv(512, 3),
-                                    DarknetConv(self.num_anchor*(5 + self.num_classes), 1, activate=False, bn=False)]
+        self.large_branch_layers = [DarknetConv(512, 3, kernel_initializer=self.kernel_initializer),
+                                    DarknetConv(self.num_anchor*(5 + self.num_classes), 1, activate=False, bn=False, kernel_initializer=self.kernel_initializer)]
         
-        self.large_upsample_layers = [DarknetConv(128, 1),
+        self.large_upsample_layers = [DarknetConv(128, 1, kernel_initializer=self.kernel_initializer),
                                       DarknetUpsample()]
         
-        self.medium_branch_layers = [DarknetConv(256, 3),
-                                     DarknetConv(self.num_anchor*(5 + self.num_classes), 1, activate=False, bn=False)]
+        self.medium_branch_layers = [DarknetConv(256, 3, kernel_initializer=self.kernel_initializer),
+                                     DarknetConv(self.num_anchor*(5 + self.num_classes), 1, activate=False, bn=False, kernel_initializer=self.kernel_initializer)]
         print('Model: YOLOv3_tiny')
     def call(self, input, training):
         m_route, l_route = self.darknet19_tiny(input, training)

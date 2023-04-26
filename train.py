@@ -1,5 +1,4 @@
-import shutil, sys, os, tqdm
-import numpy as np
+import tqdm
 import tensorflow as tf
 from config import *
 from utils import data_utils, train_utils, io_utils, eval_utils, post_processing, anchor_utils, bbox_utils
